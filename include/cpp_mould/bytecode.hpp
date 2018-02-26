@@ -5,84 +5,57 @@ namespace mould {
   using Codepoint = unsigned char;
 
   enum OpCode: Codepoint {
-    Literal   = 0b0 /* some literal with address embedded */,
-    Formatted = 0b1 /* an argument from the environment */,
+    Literal   = 0 /* some literal with address embedded */,
 
-    ArgumentIndex_Numbered = 0b000,
-    ArgumentIndex_Named    = 0b010,
-    ArgumentIndex_Auto     = 0b100,
-
-    Stop = 0b11111111,
+     /* an argument from the environment, formatted */
+    Formatted_IndexAuto_FormatAuto = 1,
+    Formatted_IndexAuto_FormatDirect = 2,
+    Formatted_IndexCount_FormatAuto = 3,
+    Formatted_IndexCount_FormatDirect = 4,
   };
-
-  template<auto v> constexpr decltype(v) _signed_argument = (v << 1);
-  template<auto v> constexpr decltype(v) _unsigned_argument = (v << 1) | 0b1;
-
-  /* Performs conversion of arguments beforehand */
-  enum FormattingType: Codepoint {
-    Custom           = 0,
-    Bool             = 1,
-
-    SignedChar       = _signed_argument<1>,
-    UnsignedChar     = _unsigned_argument<1>,
-    SignedShort      = _signed_argument<2>,
-    UnsignedShort    = _unsigned_argument<2>,
-    SignedInt        = _signed_argument<3>,
-    UnsignedInt      = _unsigned_argument<3>,
-    SignedLong       = _signed_argument<4>,
-    UnsignedLong     = _unsigned_argument<4>,
-    SignedLongLong   = _signed_argument<5>,
-    UnsignedLongLong = _unsigned_argument<5>, /* 11 */
-
-    Float      = 12,
-    Double     = 13,
-    LongDouble = 14,
-
-    Char   = 15,
-    Char16 = 16,
-    Char32 = 17,
-    WChar  = 18,
-
-    /* A character array where the environment knows the length */
-    CharString   = 19,
-    Char16String = 20,
-    Char32String = 21,
-    WCharString  = 22,
-
-    Ptr = 23,
-
-    /* Like string, but unknown length */
-    CharPtr   = 24,
-    Char16Ptr = 25,
-    Char32Ptr = 26,
-    WCharPtr  = 27,
-
-    Custom = 0xFF,
-  };
-
-  constexpr is_signed_argument(Argument argument) {
-    auto count = argument >> 1;
-    return count > 0 && count <= 5 && (argument & 0b1 == 0);
-  }
-
-  constexpr is_unsigned_argument(Argument argument) {
-    auto count = argument >> 1;
-    return count > 0 && count <= 5 && (argument & 0b1 == 0);
-  }
 
   enum Formatting: Codepoint {
-    Auto     = 0b0000,
-    Decimal  = 0b0001,
-    Binary   = 0b0010,
-    Octal    = 0b0011,
-    Hex      = 0b0100,
-    HEX      = 0b0101,
-    Exponent = 0b0110,
-    EXPONENT = 0b0111,
-    FPoint   = 0b1000,
-    FPOINT   = 0b1001,
+    /* If everything is auto , this is encoded in the opcode */
+    Auto     = 0,
 
-    Width_Direct = 0b10000,
+    Decimal  = 1,
+    Binary   = 2,
+    Octal    = 3,
+    Hex      = 4,
+    HEX      = 5,
+    Exponent = 6,
+    EXPONENT = 7,
+    FPoint   = 8,
+    FPOINT   = 9,
+    Pointer  = 10,
+
+    String   = 11,
+
+    /* Room for 4 more */
+
+    Flag_Width_Auto       = 0b0'0000,
+    Flag_Width_Direct     = 0b1'0000,
+
+    Flag_Precision_Auto   = 0b0'00000,
+    Flag_Precision_Direct = 0b1'00000,
+
+    /* Could just always read padding, if we need another fast flag */
+    Flag_Padding_Auto     = 0b0'000000,
+    Flag_Padding_Direct   = 0b1'000000,
+
+    Flag_Extended_None    = 0b0'0000000,
+    Flag_Extended_Control = 0b1'0000000 /* Allows fill character, justifying, sign control */,
+  };
+
+  enum ExtendedFormatting: Codepoint {
+    /* Auto is necessary, as one can be chosen for all types */
+    Align_Left   = 0b00,
+    Align_Right  = 0b01,
+    Align_Center = 0b10,
+
+    Sign_Auto    = 0b00'00,
+    Sign_Always  = 0b01'00,
+    Sign_Pad     = 0b10'00,
   };
 }
 
