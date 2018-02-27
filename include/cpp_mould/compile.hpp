@@ -5,10 +5,10 @@
 #include <iterator>
 
 #include "bytecode.hpp"
+#include "engine.hpp"
 #include "generate.hpp"
 
 namespace mould::internal {
-
   template<size_t N, typename CharT = const char>
   constexpr Buffer<CharT> format_buffer(CharT (&format_str)[N]) {
     return { std::begin(format_str), std::end(format_str) - 1 /* \0 term */ };
@@ -72,7 +72,8 @@ namespace mould::internal {
   }
 
   template<size_t N, typename CharT = const char>
-  auto char_type(CharT (&format_str)[N]) -> CharT;
+  auto char_type(CharT (&format_str)[N])
+    -> typename std::remove_const<CharT>::type;
 
   template<size_t N, typename CharT = const char>
   constexpr size_t buffer_size(CharT (&format_str)[N]) {
@@ -88,7 +89,7 @@ namespace mould::internal {
   using CharType = decltype(char_type(format_str));
 
   template<size_t OP_COUNT, size_t IM_COUNT, typename _CharT>
-  struct ByteCode {
+  struct ByteCode: TypeErasedByteCode<_CharT> {
     using CharT = _CharT;
     const CharT* original_string;
 
@@ -96,10 +97,19 @@ namespace mould::internal {
     Immediate immediates[IM_COUNT];
 
     bool error;
+
     template<size_t N>
     constexpr ByteCode(const CharT (&format)[N])
       : original_string(format), code(), immediates(), error(false)
       {}
+
+    ByteCodeBuffer code_buffer() const override {
+      return { code };
+    }
+
+    ImmediateBuffer immediate_buffer() const override {
+      return { immediates };
+    }
   };
 }
 

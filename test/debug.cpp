@@ -27,6 +27,6 @@ int main() {
 
     auto description = descriptor(formatter);
     while(description) {
-      std::cout << description.describe_next_byte_code() << "\n";
+      std::cout << *description << "\n";
     }
 }

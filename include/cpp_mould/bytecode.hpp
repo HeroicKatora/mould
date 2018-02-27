@@ -131,6 +131,13 @@ namespace mould::internal {
 
   using ByteCodeOutputBuffer = Buffer<Codepoint>;
   using ImmediateOutputBuffer = Buffer<Immediate>;
+
+  template<typename CharT>
+  class TypeErasedByteCode {
+  public:
+    virtual internal::ByteCodeBuffer code_buffer() const = 0;
+    virtual internal::ImmediateBuffer immediate_buffer() const = 0;
+  };
 }
 
 #endif

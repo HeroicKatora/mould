@@ -205,10 +205,9 @@ namespace mould::internal {
     ByteCodeBuffer op_buffer;
     ImmediateBuffer im_buffer;
 
-    template<typename Formatter>
-    constexpr Descriptor(const Formatter& formatter) :
-        op_buffer { std::begin(formatter.code), std::end(formatter.code) },
-        im_buffer { std::begin(formatter.immediates), std::end(formatter.immediates) }
+    constexpr Descriptor(const TypeErasedByteCode<CharT>& formatter) :
+        op_buffer { formatter.code_buffer() },
+        im_buffer { formatter.immediate_buffer() }
         { }
 
     constexpr bool empty() const {
@@ -227,10 +226,10 @@ namespace mould::internal {
 }
 
 namespace mould {
-  template<typename Formatter>
-  constexpr auto descriptor(const Formatter& formatter)
-  -> internal::Descriptor<typename Formatter::CharT> {
-    return internal::Descriptor<typename Formatter::CharT> { formatter };
+  template<typename CharT>
+  constexpr auto descriptor(const internal::TypeErasedByteCode<CharT>& formatter)
+  -> internal::Descriptor<CharT> {
+    return internal::Descriptor<CharT> { formatter };
   }
 }
 
