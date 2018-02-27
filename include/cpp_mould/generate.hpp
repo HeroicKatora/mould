@@ -50,14 +50,17 @@ namespace mould {
   };
 
   template<typename CharT>
-  constexpr auto get_string_literal(Buffer<CharT>& buffer)
-  -> StringLiteral<CharT> {
+  constexpr bool get_string_literal(
+    Buffer<CharT>& buffer,
+    StringLiteral<CharT>& literal)
+  {
     const auto begin = buffer.begin;
     while(buffer.begin < buffer.end && *buffer.begin != '{') buffer.begin++;
-    return {
+    literal = StringLiteral<CharT> {
       EncodedOperation::Literal(),
       { begin, buffer.begin }
     };
+    return true;
   }
 
   template<typename CharT>

@@ -46,17 +46,17 @@ namespace mould {
 
     constexpr OpCode opcode() const {
       if(encoded == 0xFF) return OpCode::Stop;
-      if(encoded & 0x1 == 0) return OpCode::Literal;
+      if((encoded & 0x1) == 0) return OpCode::Literal;
       else return OpCode::Insert;
     }
 
     constexpr CodeValue insert_index() const {
-      if(encoded & 0x2 == 0) return CodeValue::Auto;
+      if((encoded & 0x2) == 0) return CodeValue::Auto;
       else return CodeValue::ReadCode;
     }
 
     constexpr ImmediateValue insert_format() const {
-      if(encoded & 0x4 == 0) return ImmediateValue::Auto;
+      if((encoded & 0x4) == 0) return ImmediateValue::Auto;
       else return ImmediateValue::ReadImmediate;
     }
 
@@ -66,7 +66,7 @@ namespace mould {
 
     friend constexpr bool operator>>(Buffer<const Codepoint>& buffer, EncodedOperation& operation) {
       EncodedOperation internal {};
-      (buffer >> internal.encoded) ? (operation = internal, true) : false;
+      return (buffer >> internal.encoded) ? (operation = internal, true) : false;
     }
   };
 
@@ -132,7 +132,7 @@ namespace mould {
 
     friend constexpr bool operator>>(Buffer<const Immediate>& buffer, EncodedFormat& operation) {
       EncodedFormat internal {};
-      (buffer >> internal.encoded) ? (operation = internal, true) : false;
+      return (buffer >> internal.encoded) ? (operation = internal, true) : false;
     }
   };
 

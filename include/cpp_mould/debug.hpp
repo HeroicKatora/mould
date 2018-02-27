@@ -52,14 +52,21 @@ namespace mould {
       }
     }
 
-    constexpr bool _read_literal(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
+    constexpr bool _read_literal(
+      ByteCodeBuffer& code,
+      ImmediateBuffer& immediates)
+    {
       return (immediates >> literal);
     }
 
-    constexpr bool _read_insert_format(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
+    constexpr bool _read_insert_format(
+      ByteCodeBuffer& code,
+      ImmediateBuffer& immediates)
+    {
       if(!(immediates >> format)) {
 
       }
+      return true;
     }
   };
 
@@ -71,21 +78,19 @@ namespace mould {
     Immediate auto_index = 0;
     Immediate normal_index = 0;
 
-    EncodedOperation operation {};
+    DebuggableOperation operation {};
     EncodedStringLiteral literal {};
 
-    if(op_buffer.empty())
-      return {};
-
-    while((op_buffer >> operation)) {
-      switch(operation.opcode()) {
+    while(operation.read(op_buffer, im_buffer)) {
+      switch(operation.opcode.opcode()) {
       case OpCode::Literal:
-        if(!(im_buffer >> literal)) return "!!!Missing literal immediate";
+        if(!(im_buffer >> literal))
+          return "!!!Missing literal immediate";
         return std::string("Literal: \"")
                + std::string(literal.begin_ptr<const CharT>(), literal.length)
                + "\"";
       case OpCode::Insert:
-        break;
+        return std::string("Insert format");
       case OpCode::Stop:
         op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
         return "Stop";
@@ -93,6 +98,8 @@ namespace mould {
         return "!!!Unknown op code";
       }
     }
+    op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
+    return std::string("No more code");
   }
 
   template<typename CharT>
@@ -125,7 +132,6 @@ namespace mould {
   -> Descriptor<typename Formatter::CharT> {
     return Descriptor<typename Formatter::CharT> { formatter };
   }
-
 }
 
 #endif

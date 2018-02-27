@@ -8,10 +8,22 @@ using namespace mould;
 
 static constexpr char format[] = "Hello {}";
 
+template<typename Formatter>
+auto dump_bytecode(const Formatter& formatter) {
+  std::cout << "Bytecode\n";
+  for(const auto i : formatter.code) {
+    std::cout << (unsigned int) i << "\n";
+  }
+  std::cout << "Immediates\n";
+  for(const auto i : formatter.immediates) {
+    std::cout << i << "\n";
+  }
+}
+
 int main() {
   	constexpr auto formatter = compile<format>();
-    auto description = descriptor(formatter);
 
+    auto description = descriptor(formatter);
     while(description) {
       std::cout << description.describe_next_byte_code() << "\n";
     }
