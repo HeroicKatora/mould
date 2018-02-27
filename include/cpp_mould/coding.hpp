@@ -29,19 +29,20 @@ namespace mould {
     constexpr EncodedOperation(Codepoint encoded)
       : encoded(encoded)
       { }
-
-    static constexpr EncodedOperation Literal() {
-      return { (Codepoint) 0 };
-    }
-
-    static constexpr EncodedOperation Insert(CodeValue index, ImmediateValue format) {
-      const auto mask_index = (static_cast<unsigned char>(index) & 1) << 1;
-      const auto mask_format = (static_cast<unsigned char>(format) & 1) << 2;
-      return { (Codepoint) (1 | mask_index | mask_format) };
-    }
-
-    static constexpr EncodedOperation Stop() {
-      return { (Codepoint) 0xFF };
+    constexpr EncodedOperation(Operation operation) : encoded() {
+      switch(operation.type) {
+      case OpCode::Literal:
+        encoded = 0;
+        break;
+      case OpCode::Insert: {
+        const auto mask_index = (static_cast<unsigned char>(operation.insert_index) & 1) << 1;
+        const auto mask_format = (static_cast<unsigned char>(operation.insert_format) & 1) << 2;
+        encoded = (Codepoint) (1 | mask_index | mask_format);
+        } break;
+      case OpCode::Stop:
+        encoded = 0xFF;
+        break;
+      }
     }
 
     constexpr OpCode opcode() const {
@@ -83,27 +84,21 @@ namespace mould {
 
     constexpr EncodedFormat()
       : encoded() {}
-    constexpr EncodedFormat(Codepoint encoded)
+    constexpr EncodedFormat(Immediate encoded)
       : encoded(encoded)
       { }
-    constexpr EncodedFormat(
-      FormatKind kind,
-      InlineValue width,
-      InlineValue precision,
-      InlineValue padding,
-      Alignment alignment,
-      Sign sign,
-      unsigned char inlines[6])
+
+    constexpr EncodedFormat(Formatting format)
       : encoded(0)
     {
-      for(int i = 0; i < 6; i++) encoded = (encoded|inlines[i]) << 8;
+      for(int i = 0; i < 6; i++) encoded = (encoded|format.inlines[i]) << 8;
 
-      encoded |= (static_cast<unsigned char>(kind) & Immediate{0xF});
-      encoded |= (static_cast<unsigned char>(width) & Immediate{0x3}) << 4;
-      encoded |= (static_cast<unsigned char>(precision) & Immediate{0x3}) << 6;
-      encoded |= (static_cast<unsigned char>(padding) & Immediate{0x3}) << 8;
-      encoded |= (static_cast<unsigned char>(alignment) & Immediate{0x3}) << 10;
-      encoded |= (static_cast<unsigned char>(sign) & Immediate{0x3}) << 12;
+      encoded |= (static_cast<unsigned char>(format.kind) & Immediate{0xF});
+      encoded |= (static_cast<unsigned char>(format.width) & Immediate{0x3}) << 4;
+      encoded |= (static_cast<unsigned char>(format.precision) & Immediate{0x3}) << 6;
+      encoded |= (static_cast<unsigned char>(format.padding) & Immediate{0x3}) << 8;
+      encoded |= (static_cast<unsigned char>(format.alignment) & Immediate{0x3}) << 10;
+      encoded |= (static_cast<unsigned char>(format.sign) & Immediate{0x3}) << 12;
     }
 
     constexpr FormatKind kind() {

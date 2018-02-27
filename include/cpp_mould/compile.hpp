@@ -145,7 +145,7 @@ namespace mould {
       im_output << format_spec;
     }
 
-    op_output << EncodedOperation::Stop();
+    op_output << EncodedOperation { Operation::Stop() };
     return bytecode;
   }
 }

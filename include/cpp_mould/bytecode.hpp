@@ -33,8 +33,20 @@ namespace mould {
 
   struct Operation {
     OpCode         type;
-    CodeValue      index_source;
-    ImmediateValue format_source;
+    CodeValue      insert_index /* Only interesting for OpCode::insert */;
+    ImmediateValue insert_format /* Only interesting for OpCode::insert */;
+
+    static constexpr Operation Literal() {
+      return { OpCode::Literal, CodeValue::Auto, ImmediateValue::Auto };
+    }
+
+    static constexpr Operation Insert(CodeValue index, ImmediateValue format) {
+      return { OpCode::Insert, index, format };
+    }
+
+    static constexpr Operation Stop() {
+      return { OpCode::Stop, CodeValue::Auto, ImmediateValue::Auto };
+    }
   };
 
   enum struct FormatKind: unsigned char {
