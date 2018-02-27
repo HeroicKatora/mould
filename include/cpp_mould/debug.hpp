@@ -23,6 +23,8 @@ namespace mould {
     ByteCodeBuffer& op_buffer,
     ImmediateBuffer& im_buffer
   ) {
+    Immediate auto_index = 0;
+    Immediate normal_index = 0;
     EncodedStringLiteral literal {};
 
     if(op_buffer.empty())
@@ -30,23 +32,36 @@ namespace mould {
 
     switch(*op_buffer.begin++) {
     case OpCode::Literal:
-      if(!(im_buffer >> literal)) return "!!!Missing immediate literal";
+      if(!(im_buffer >> literal)) return "!!!Missing literal immediate";
       return std::string("Literal: \"")
              + std::string(literal.begin_ptr<const CharT>(), literal.length)
              + "\"";
     case OpCode::Formatted_IndexAuto_FormatAuto:
-      break;
+      return std::string("Formatted argument: index auto (")
+             + std::to_string(auto_index++)
+             + std::string("), format auto");
     case OpCode::Formatted_IndexAuto_FormatDirect:
-      break;
+      return std::string("Formatted argument: index auto (")
+             + std::to_string(auto_index++)
+             + std::string("), format direct");
     case OpCode::Formatted_IndexCount_FormatAuto:
-      break;
+      if(!(im_buffer >> normal_index)) return "!!!Missing index immediate";
+      auto_index = std::max(auto_index, normal_index + 1);
+      return std::string("Formatted argument: index ")
+             + std::to_string(normal_index)
+             + std::string(", format auto");
     case OpCode::Formatted_IndexCount_FormatDirect:
-      break;
+      if(!(im_buffer >> normal_index)) return "!!!Missing index immediate";
+      auto_index = std::max(auto_index, normal_index + 1);
+      return std::string("Formatted argument: index ")
+             + std::to_string(normal_index)
+             + std::string(", format direct");
     case OpCode::Stop:
       op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
       return "Stop";
+    default:
+      return "!!!Unknown op code";
     }
-    return "!!!Unknown op code";
   }
 
   template<typename CharT>

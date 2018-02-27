@@ -67,6 +67,15 @@ namespace mould {
     CharT* begin;
     CharT* end;
 
+    constexpr Buffer(CharT* begin, CharT* end)
+      : begin(begin), end(end)
+      { }
+
+    template<size_t N>
+    constexpr Buffer(CharT (&buffer)[N])
+      : begin(buffer), end(buffer + N)
+      { }
+
     constexpr bool empty() const { return begin == end; }
   };
 }

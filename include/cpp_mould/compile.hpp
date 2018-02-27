@@ -56,8 +56,8 @@ namespace mould {
   -> ByteCode<ByteOpCount<format_str>, ImmediateCount<format_str>, CharType<format_str>> {
     ByteCode<ByteOpCount<format_str>, ImmediateCount<format_str>, CharType<format_str>> bytecode;
 
-    Codepoint* op_output = bytecode.code;
-    Immediate* im_output = bytecode.immediates;
+    Buffer<Codepoint> op_output = { bytecode.code };
+    Buffer<Immediate> im_output = { bytecode.immediates };
     auto remaining = format_buffer(format_str);
 
     while(!remaining.empty()) {
@@ -65,9 +65,8 @@ namespace mould {
       const auto literal = get_string_literal(remaining);
       if(!literal.empty()) {
         /* Write the string write bytecode */
-        *op_output++ = OpCode::Literal;
-        *im_output++ = literal.literal.begin;
-        *im_output++ = literal.literal.length;
+        op_output << (Codepoint) OpCode::Literal;
+        im_output << literal.literal;
       }
 
       if(remaining.empty()) break;
@@ -79,7 +78,7 @@ namespace mould {
       }
     }
 
-    *op_output++ = OpCode::Stop;
+    op_output << (Codepoint) OpCode::Stop;
     return bytecode;
   }
 }
