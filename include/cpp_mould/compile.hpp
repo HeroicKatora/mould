@@ -2,7 +2,6 @@
 #define CPP_MOULD_COMPILE_HPP
 /* The compilation process transforms a format string into byte code.
  */
-#include <cstddef>
 #include <iterator>
 
 #include "bytecode.hpp"
@@ -20,6 +19,9 @@ namespace mould {
   }
 
   template<size_t N, typename CharT = const char>
+  auto char_type(CharT (&format_str)[N]) -> CharT;
+
+  template<size_t N, typename CharT = const char>
   constexpr size_t buffer_size(CharT (&format_str)[N]) {
     return N;
   }
@@ -35,8 +37,12 @@ namespace mould {
   template<auto& format_str>
   constexpr size_t ImmediateCount = bytecode_count(format_str);
 
-  template<size_t OP_COUNT, size_t IM_COUNT>
+  template<auto& format_str>
+  using CharType = decltype(char_type(format_str));
+
+  template<size_t OP_COUNT, size_t IM_COUNT, typename _CharT>
   struct ByteCode {
+    using CharT = _CharT;
     Codepoint code[OP_COUNT];
     Immediate immediates[IM_COUNT];
 
@@ -47,8 +53,8 @@ namespace mould {
 
   template<auto& format_str>
   constexpr auto compile()
-  -> ByteCode<ByteOpCount<format_str>, ImmediateCount<format_str>> {
-    ByteCode<ByteOpCount<format_str>, ImmediateCount<format_str>> bytecode;
+  -> ByteCode<ByteOpCount<format_str>, ImmediateCount<format_str>, CharType<format_str>> {
+    ByteCode<ByteOpCount<format_str>, ImmediateCount<format_str>, CharType<format_str>> bytecode;
 
     Codepoint* op_output = bytecode.code;
     Immediate* im_output = bytecode.immediates;
@@ -69,10 +75,11 @@ namespace mould {
 
       if(!format_spec.complete) {
         bytecode.error = true;
-        return bytecode;
+        break;
       }
     }
 
+    *op_output++ = OpCode::Stop;
     return bytecode;
   }
 }

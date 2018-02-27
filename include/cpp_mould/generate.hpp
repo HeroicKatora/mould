@@ -8,14 +8,6 @@
 
 namespace mould {
   template<typename CharT>
-  struct Buffer {
-    const CharT* begin;
-    const CharT* end;
-
-    constexpr bool empty() const { return begin == end; }
-  };
-
-  template<typename CharT>
   struct StringLiteral {
     EncodedStringLiteral literal;
     constexpr bool empty() const { return literal.length == 0; }
@@ -40,7 +32,7 @@ namespace mould {
   -> const FormatSpecifier<CharT> {
     const auto begin = buffer.begin;
 
-    for(;;buffer.begin++) {
+    for(;; buffer.begin++) {
       if(buffer.begin == buffer.end) {
         return { { begin, buffer.begin }, false };
       }

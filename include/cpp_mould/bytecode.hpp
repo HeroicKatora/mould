@@ -1,5 +1,6 @@
 #ifndef CPP_MOULD_BYTECODE_HPP
 #define CPP_MOULD_BYTECODE_HPP
+#include <cstddef>
 
 namespace mould {
   using Codepoint = unsigned char;
@@ -13,6 +14,8 @@ namespace mould {
     Formatted_IndexAuto_FormatDirect = 2,
     Formatted_IndexCount_FormatAuto = 3,
     Formatted_IndexCount_FormatDirect = 4,
+
+    Stop = 0xFF,
   };
 
   enum Formatting: Codepoint {
@@ -57,6 +60,14 @@ namespace mould {
     Sign_Auto    = 0b00'00,
     Sign_Always  = 0b01'00,
     Sign_Pad     = 0b10'00,
+  };
+
+  template<typename CharT>
+  struct Buffer {
+    CharT* begin;
+    CharT* end;
+
+    constexpr bool empty() const { return begin == end; }
   };
 }
 
