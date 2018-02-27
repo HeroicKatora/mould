@@ -54,6 +54,14 @@ namespace mould {
       return false;
     }
   };
+
+  struct EncodedOpcode {
+    Codepoint opcode;
+    Codepoint index;
+    Immediate formatting[8];
+
+    unsigned char formatting_count;
+  };
 }
 
 #endif
