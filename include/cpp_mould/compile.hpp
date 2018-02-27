@@ -65,7 +65,7 @@ namespace mould {
       const auto literal = get_string_literal(remaining);
       if(!literal.empty()) {
         /* Write the string write bytecode */
-        op_output << (Codepoint) OpCode::Literal;
+        op_output << static_cast<Codepoint>(OpCode::Literal);
         im_output << literal.literal;
       }
 
@@ -78,7 +78,7 @@ namespace mould {
       }
     }
 
-    op_output << (Codepoint) OpCode::Stop;
+    op_output << static_cast<Codepoint>(OpCode::Stop);
     return bytecode;
   }
 }

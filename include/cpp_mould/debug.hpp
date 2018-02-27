@@ -30,7 +30,7 @@ namespace mould {
     if(op_buffer.empty())
       return {};
 
-    switch(*op_buffer.begin++) {
+    switch(static_cast<OpCode>(*op_buffer.begin++)) {
     case OpCode::Literal:
       if(!(im_buffer >> literal)) return "!!!Missing literal immediate";
       return std::string("Literal: \"")

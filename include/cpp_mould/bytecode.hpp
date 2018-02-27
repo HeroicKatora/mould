@@ -6,7 +6,7 @@ namespace mould {
   using Codepoint = unsigned char;
   using Immediate = size_t;
 
-  enum OpCode: Codepoint {
+  enum struct OpCode: Codepoint {
     Literal   = 0 /* some literal with address embedded */,
 
      /* an argument from the environment, formatted */
@@ -18,9 +18,8 @@ namespace mould {
     Stop = 0xFF,
   };
 
-  enum Formatting: Codepoint {
-    /* If everything is auto , this is encoded in the opcode */
-    Auto     = 0,
+  enum struct FormattingKind: unsigned char {
+    Auto     = 0, /* The kind is automatically chosen by the parameter */
 
     Decimal  = 1,
     Binary   = 2,
@@ -34,32 +33,41 @@ namespace mould {
     Pointer  = 10,
 
     String   = 11,
-
-    /* Room for 4 more */
-
-    Flag_Width_Auto       = 0b0'0000,
-    Flag_Width_Direct     = 0b1'0000,
-
-    Flag_Precision_Auto   = 0b0'00000,
-    Flag_Precision_Direct = 0b1'00000,
-
-    /* Could just always read padding, if we need another fast flag */
-    Flag_Padding_Auto     = 0b0'000000,
-    Flag_Padding_Direct   = 0b1'000000,
-
-    Flag_Extended_None    = 0b0'0000000,
-    Flag_Extended_Control = 0b1'0000000 /* Allows fill character, justifying, sign control */,
   };
 
-  enum ExtendedFormatting: Codepoint {
-    /* Auto is necessary, as one can be chosen for all types */
-    Align_Left   = 0b00,
-    Align_Right  = 0b01,
-    Align_Center = 0b10,
+  enum struct FlagValueKind: unsigned char {
+    Auto      = 0 /* Deduced from input type or default */,
+    Immediate = 1 /* Extra intermediate following the Formatting specifier */,
+    Inline    = 2 /* Stored in the 8 bit inline extension array. */,
+    Parameter = 3 /* Given as an additional parameter, index is auto */,
+  };
 
-    Sign_Auto    = 0b00'00,
-    Sign_Always  = 0b01'00,
-    Sign_Pad     = 0b10'00,
+  enum struct Alignment: unsigned char {
+    Default = 0,
+    Left    = 1,
+    Right   = 2,
+    Center  = 3,
+  };
+
+  enum struct Sign: unsigned char {
+    Default = 0,
+    Always  = 1,
+    Pad     = 2,
+  };
+
+  struct Formatting {
+    /* If everything is auto , this is encoded in the opcode */
+    FormattingKind kind;      /* 8 bits */
+
+    FlagValueKind  width;     /* 2 bits */
+    FlagValueKind  precision; /* 2 bits */
+
+    FlagValueKind  padding;   /* 2 bits */ /* value is a character */
+    Alignment      alignment; /* 2 bits */
+
+    // 16 bit used.
+    // 16 - 48 bit for all kinds of fancy stuff.
+    unsigned char inlines[2];
   };
 
   template<typename CharT>
