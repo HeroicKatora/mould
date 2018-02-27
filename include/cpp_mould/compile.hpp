@@ -26,7 +26,7 @@ namespace mould {
 
   template<size_t N, typename CharT = const char>
   constexpr Buffer<CharT> format_buffer(CharT (&format_str)[N]) {
-    return { std::begin(format_str), std::end(format_str) };
+    return { std::begin(format_str), std::end(format_str) - 1 /* \0 term */ };
   }
 
   template<auto& format_str>
@@ -38,10 +38,10 @@ namespace mould {
   template<size_t OP_COUNT, size_t IM_COUNT>
   struct ByteCode {
     Codepoint code[OP_COUNT];
-    size_t immediates[IM_COUNT];
+    Immediate immediates[IM_COUNT];
 
     bool error;
-    constexpr ByteCode() : code(), error(false)
+    constexpr ByteCode() : code(), immediates(), error(false)
       {}
   };
 
@@ -51,7 +51,7 @@ namespace mould {
     ByteCode<ByteOpCount<format_str>, ImmediateCount<format_str>> bytecode;
 
     Codepoint* op_output = bytecode.code;
-    size_t* im_output = bytecode.immediates;
+    Immediate* im_output = bytecode.immediates;
     auto remaining = format_buffer(format_str);
 
     while(!remaining.empty()) {

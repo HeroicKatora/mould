@@ -40,7 +40,7 @@ namespace mould {
   -> const FormatSpecifier<CharT> {
     const auto begin = buffer.begin;
 
-    for(;;) {
+    for(;;buffer.begin++) {
       if(buffer.begin == buffer.end) {
         return { { begin, buffer.begin }, false };
       }

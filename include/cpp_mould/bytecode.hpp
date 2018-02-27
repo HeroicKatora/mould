@@ -3,6 +3,7 @@
 
 namespace mould {
   using Codepoint = unsigned char;
+  using Immediate = size_t;
 
   enum OpCode: Codepoint {
     Literal   = 0 /* some literal with address embedded */,
