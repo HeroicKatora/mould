@@ -28,7 +28,7 @@ namespace mould {
     Immediate precision;
     Immediate padding;
 
-    constexpr bool read(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
+    bool read(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
       if(!(code >> opcode)) {
         return false;
       }
@@ -52,7 +52,7 @@ namespace mould {
       }
     }
 
-    constexpr bool _read_literal(
+    bool _read_literal(
       ByteCodeBuffer& code,
       ImmediateBuffer& immediates)
     {
@@ -63,9 +63,47 @@ namespace mould {
       ByteCodeBuffer& code,
       ImmediateBuffer& immediates)
     {
+      unsigned char inline_index = 0;
       if(!(immediates >> format)) {
-
+        return false;
       }
+
+      switch(format.width()) {
+      case InlineValue::Immediate:
+        if(!(immediates >> width))
+          return false;
+        break;
+      case InlineValue::Inline: [[falltrough]]
+      case InlineValue::Parameter:
+        width = format.inline_value(inline_index++);
+      case InlineValue::Auto:
+        break;
+      }
+
+      switch(format.precision()) {
+      case InlineValue::Immediate:
+        if(!(immediates >> precision))
+          return false;
+        break;
+      case InlineValue::Inline: [[falltrough]]
+      case InlineValue::Parameter:
+        precision = format.inline_value(inline_index++);
+      case InlineValue::Auto:
+        break;
+      }
+
+      switch(format.padding()) {
+      case InlineValue::Immediate:
+        if(!(immediates >> padding))
+          return false;
+        break;
+      case InlineValue::Inline: [[falltrough]]
+      case InlineValue::Parameter:
+        padding = format.inline_value(inline_index++);
+      case InlineValue::Auto:
+        break;
+      }
+
       return true;
     }
   };
@@ -79,15 +117,14 @@ namespace mould {
     Immediate normal_index = 0;
 
     DebuggableOperation operation {};
-    EncodedStringLiteral literal {};
 
     while(operation.read(op_buffer, im_buffer)) {
       switch(operation.opcode.opcode()) {
       case OpCode::Literal:
-        if(!(im_buffer >> literal))
-          return "!!!Missing literal immediate";
         return std::string("Literal: \"")
-               + std::string(literal.begin_ptr<const CharT>(), literal.length)
+               + std::string(
+                  operation.literal.begin_ptr<const CharT>(),
+                  operation.literal.end_ptr<const CharT>())
                + "\"";
       case OpCode::Insert:
         return std::string("Insert format");
@@ -95,11 +132,10 @@ namespace mould {
         op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
         return "Stop";
       default:
+        op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
         return "!!!Unknown op code";
       }
     }
-    op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
-    return std::string("No more code");
   }
 
   template<typename CharT>

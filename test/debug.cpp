@@ -23,6 +23,8 @@ auto dump_bytecode(const Formatter& formatter) {
 int main() {
   	constexpr auto formatter = compile<format>();
 
+    // dump_bytecode(formatter);
+
     auto description = descriptor(formatter);
     while(description) {
       std::cout << description.describe_next_byte_code() << "\n";

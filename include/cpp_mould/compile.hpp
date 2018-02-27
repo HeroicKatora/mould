@@ -43,18 +43,26 @@ namespace mould {
   template<size_t OP_COUNT, size_t IM_COUNT, typename _CharT>
   struct ByteCode {
     using CharT = _CharT;
+    const CharT* original_string;
+
     Codepoint code[OP_COUNT];
     Immediate immediates[IM_COUNT];
 
     bool error;
-    constexpr ByteCode() : code(), immediates(), error(false)
+    template<size_t N>
+    constexpr ByteCode(const CharT (&format)[N])
+      : original_string(format), code(), immediates(), error(false)
       {}
   };
 
   template<auto& format_str>
   constexpr auto compile()
   -> ByteCode<ByteOpCount<format_str>, ImmediateCount<format_str>, CharType<format_str>> {
-    ByteCode<ByteOpCount<format_str>, ImmediateCount<format_str>, CharType<format_str>> bytecode;
+    ByteCode<
+      ByteOpCount<format_str>,
+      ImmediateCount<format_str>,
+      CharType<format_str>
+    > bytecode { format_str };
 
     Buffer<Codepoint> op_output = { bytecode.code };
     Buffer<Immediate> im_output = { bytecode.immediates };

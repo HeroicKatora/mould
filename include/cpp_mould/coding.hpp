@@ -60,13 +60,21 @@ namespace mould {
       else return ImmediateValue::ReadImmediate;
     }
 
-    friend constexpr bool operator<<(Buffer<Codepoint>& buffer, EncodedOperation operation) {
+    friend constexpr bool operator<<(
+      Buffer<Codepoint>& buffer,
+      EncodedOperation operation)
+    {
       return (buffer << operation.encoded);
     }
 
-    friend constexpr bool operator>>(Buffer<const Codepoint>& buffer, EncodedOperation& operation) {
+    friend constexpr bool operator>>(
+      Buffer<const Codepoint>& buffer,
+      EncodedOperation& operation)
+    {
       EncodedOperation internal {};
-      return (buffer >> internal.encoded) ? (operation = internal, true) : false;
+      return (buffer >> internal.encoded)
+        ? (operation = internal, true)
+        : false;
     }
   };
 
@@ -98,27 +106,27 @@ namespace mould {
       encoded |= (static_cast<unsigned char>(sign) & Immediate{0x3}) << 12;
     }
 
-    constexpr FormatKind format_kind(Immediate) {
+    constexpr FormatKind kind() {
       return static_cast<FormatKind>(encoded & 0xF);
     }
 
-    constexpr InlineValue format_width(Immediate) {
+    constexpr InlineValue width() {
       return static_cast<InlineValue>((encoded >> 4) & 0x3);
     }
 
-    constexpr InlineValue format_precision(Immediate) {
+    constexpr InlineValue precision() {
       return static_cast<InlineValue>((encoded >> 6) & 0x3);
     }
 
-    constexpr InlineValue format_padding(Immediate) {
+    constexpr InlineValue padding() {
       return static_cast<InlineValue>((encoded >> 8) & 0x3);
     }
 
-    constexpr Alignment format_alignment(Immediate) {
+    constexpr Alignment alignment() {
       return static_cast<Alignment>((encoded >> 10) & 0x3);
     }
 
-    constexpr Sign format_sign(Immediate) {
+    constexpr Sign sign() {
       return static_cast<Sign>((encoded >> 6) & 0x3);
     }
 
@@ -126,13 +134,21 @@ namespace mould {
       return static_cast<unsigned char>((encoded >> 16 + 8*index) & 0xFF);
     }
 
-    friend constexpr bool operator<<(Buffer<Immediate>& buffer, EncodedFormat operation) {
+    friend constexpr bool operator<<(
+      Buffer<Immediate>& buffer,
+      EncodedFormat operation)
+    {
       return (buffer << operation.encoded);
     }
 
-    friend constexpr bool operator>>(Buffer<const Immediate>& buffer, EncodedFormat& operation) {
+    friend constexpr bool operator>>(
+      Buffer<const Immediate>& buffer,
+      EncodedFormat& operation)
+    {
       EncodedFormat internal {};
-      return (buffer >> internal.encoded) ? (operation = internal, true) : false;
+      return (buffer >> internal.encoded)
+        ? (operation = internal, true)
+        : false;
     }
   };
 
@@ -153,17 +169,23 @@ namespace mould {
     constexpr CharT* begin_ptr() const { return (CharT*) begin; }
 
     template<typename CharT = const char>
-    constexpr CharT* end_ptr() const { return (CharT*) length; }
+    constexpr CharT* end_ptr() const { return ((CharT*) begin) + length; }
 
-    friend constexpr bool operator<<(Buffer<Immediate>& buffer, EncodedStringLiteral literal) {
+    friend constexpr bool operator<<(
+      Buffer<Immediate>& buffer,
+      EncodedStringLiteral literal)
+    {
       return (buffer << literal.begin) && (buffer << literal.length);
     }
 
-    friend constexpr bool operator>>(Buffer<const Immediate>& buffer, EncodedStringLiteral& literal) {
+    friend constexpr bool operator>>(
+      Buffer<const Immediate>& buffer,
+      EncodedStringLiteral& literal)
+    {
       EncodedStringLiteral internal {};
-      ((buffer >> internal.begin) && (buffer >> internal.length))
-      ? (literal = internal, true)
-      : false;
+      return ((buffer >> internal.begin) && (buffer >> internal.length))
+        ? (literal = internal, true)
+        : false;
     }
   };
 }
