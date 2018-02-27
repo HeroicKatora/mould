@@ -19,8 +19,8 @@ namespace mould {
     auto remaining = format_buffer(format_str);
     size_t count = 0;
 
-    StringLiteral<CharT> literal_spec;
-    FormatSpecifier<CharT> format_spec;
+    StringLiteral<CharT> literal_spec = { };
+    FormatSpecifier<CharT> format_spec = { };
 
     while(!remaining.empty()) {
       /* Parse the next literal */
@@ -28,9 +28,7 @@ namespace mould {
         break;
       }
 
-      if(!literal_spec.empty()) {
-        count += 1;
-      }
+      count += literal_spec.operation.codepoints();
 
       if(remaining.empty()) break;
 
@@ -38,7 +36,7 @@ namespace mould {
         break;
       }
 
-      count += format_spec.index_auto ? 1 : 2;
+      count += format_spec.operation.codepoints();
     }
 
     count += 1;
@@ -59,9 +57,7 @@ namespace mould {
         break;
       }
 
-      if(!literal_spec.empty()) {
-        count += 2;
-      }
+      count += literal_spec.operation.immediates();
 
       if(remaining.empty()) break;
 
@@ -69,7 +65,7 @@ namespace mould {
         break;
       }
 
-      count += format_spec.used_immediates;
+      count += format_spec.operation.immediates();
     }
 
     return count;
@@ -129,10 +125,8 @@ namespace mould {
         break;
       }
 
-      if(!literal_spec.empty()) {
-        op_output << literal_spec;
-        im_output << literal_spec;
-      }
+      op_output << literal_spec.operation;
+      im_output << literal_spec.operation;
 
       if(remaining.empty()) break;
 
@@ -141,8 +135,8 @@ namespace mould {
         break;
       }
 
-      op_output << format_spec;
-      im_output << format_spec;
+      op_output << format_spec.operation;
+      im_output << format_spec.operation;
     }
 
     op_output << EncodedOperation { Operation::Stop() };
