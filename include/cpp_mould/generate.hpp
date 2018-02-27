@@ -8,7 +8,7 @@
 #include "bytecode.hpp"
 #include "coding.hpp"
 
-namespace mould {
+namespace mould::internal {
 
   // Stores all codepoints and immediate values of an operation in encoded form.
   // This can be piped to both kinds of buffers.

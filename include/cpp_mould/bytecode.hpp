@@ -2,7 +2,7 @@
 #define CPP_MOULD_BYTECODE_HPP
 #include <cstddef>
 
-namespace mould {
+namespace mould::internal {
   using Codepoint = unsigned char;
   using Immediate = size_t;
 

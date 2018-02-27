@@ -3,7 +3,7 @@
 /* Interpretable values and their encoding */
 #include "bytecode.hpp"
 
-namespace mould {
+namespace mould::internal {
   static_assert(sizeof(size_t) == sizeof(void*));
   static_assert(sizeof(size_t) == sizeof(const char*));
 

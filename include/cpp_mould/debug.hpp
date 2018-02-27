@@ -5,7 +5,7 @@
 
 #include "bytecode.hpp"
 
-namespace mould {
+namespace mould::internal {
   template<size_t N>
   constexpr ByteCodeBuffer byte_code_buffer(const Codepoint(&buffer)[N]) {
     return { std::begin(buffer), std::end(buffer) };
@@ -219,16 +219,18 @@ namespace mould {
       return !empty();
     }
 
-    std::string describe_next_byte_code() {
+    std::string operator*() {
       if(empty()) return {};
-      return ::mould::describe_next_byte_code<CharT>(op_buffer, im_buffer);
+      return describe_next_byte_code<CharT>(op_buffer, im_buffer);
     }
   };
+}
 
+namespace mould {
   template<typename Formatter>
   constexpr auto descriptor(const Formatter& formatter)
-  -> Descriptor<typename Formatter::CharT> {
-    return Descriptor<typename Formatter::CharT> { formatter };
+  -> internal::Descriptor<typename Formatter::CharT> {
+    return internal::Descriptor<typename Formatter::CharT> { formatter };
   }
 }
 

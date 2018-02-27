@@ -7,7 +7,7 @@
 #include "bytecode.hpp"
 #include "generate.hpp"
 
-namespace mould {
+namespace mould::internal {
 
   template<size_t N, typename CharT = const char>
   constexpr Buffer<CharT> format_buffer(CharT (&format_str)[N]) {
@@ -101,10 +101,16 @@ namespace mould {
       : original_string(format), code(), immediates(), error(false)
       {}
   };
+}
 
+namespace mould {
   template<auto& format_str>
   constexpr auto compile()
-  -> ByteCode<ByteOpCount<format_str>, ImmediateCount<format_str>, CharType<format_str>> {
+  -> internal::ByteCode<
+      internal::ByteOpCount<format_str>,
+      internal::ImmediateCount<format_str>,
+      internal::CharType<format_str>> {
+    using namespace internal;
     ByteCode<
       ByteOpCount<format_str>,
       ImmediateCount<format_str>,
