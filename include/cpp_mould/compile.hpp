@@ -8,14 +8,71 @@
 #include "generate.hpp"
 
 namespace mould {
+
+  template<size_t N, typename CharT = const char>
+  constexpr Buffer<CharT> format_buffer(CharT (&format_str)[N]) {
+    return { std::begin(format_str), std::end(format_str) - 1 /* \0 term */ };
+  }
+
   template<size_t N, typename CharT = const char>
   constexpr size_t bytecode_count(CharT (&format_str)[N]) {
+    auto remaining = format_buffer(format_str);
+    size_t count = 0;
+
+    StringLiteral<CharT> literal_spec;
+    FormatSpecifier<CharT> format_spec;
+
+    while(!remaining.empty()) {
+      /* Parse the next literal */
+      if(!get_string_literal(remaining, literal_spec)) {
+        break;
+      }
+
+      if(!literal_spec.empty()) {
+        count += 1;
+      }
+
+      if(remaining.empty()) break;
+
+      if(!get_format_specifier(remaining, format_spec)) {
+        break;
+      }
+
+      count += format_spec.index_auto ? 1 : 2;
+    }
+
+    count += 1;
     return N;
   }
 
   template<size_t N, typename CharT = const char>
   constexpr size_t immediate_count(CharT (&format_str)[N]) {
-    return 4*N;
+    auto remaining = format_buffer(format_str);
+    size_t count = 0;
+
+    StringLiteral<CharT> literal_spec;
+    FormatSpecifier<CharT> format_spec;
+
+    while(!remaining.empty()) {
+      /* Parse the next literal */
+      if(!get_string_literal(remaining, literal_spec)) {
+        break;
+      }
+
+      if(!literal_spec.empty()) {
+        count += 2;
+      }
+
+      if(remaining.empty()) break;
+
+      if(!get_format_specifier(remaining, format_spec)) {
+        break;
+      }
+
+      count += format_spec.used_immediates;
+    }
+
+    return count;
   }
 
   template<size_t N, typename CharT = const char>
@@ -25,12 +82,6 @@ namespace mould {
   constexpr size_t buffer_size(CharT (&format_str)[N]) {
     return N;
   }
-
-  template<size_t N, typename CharT = const char>
-  constexpr Buffer<CharT> format_buffer(CharT (&format_str)[N]) {
-    return { std::begin(format_str), std::end(format_str) - 1 /* \0 term */ };
-  }
-
   template<auto& format_str>
   constexpr size_t ByteOpCount = bytecode_count(format_str);
 
