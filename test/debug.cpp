@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iterator>
 
-#include <cpp_mould/all.hpp>
+#include <cpp_mould.hpp>
 #include <cpp_mould/debug.hpp>
 
 using namespace mould;

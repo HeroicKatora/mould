@@ -1,5 +1,5 @@
 #include <iostream>
-#include <cpp_mould/all.hpp>
+#include <cpp_mould.hpp>
 
 using namespace mould;
 
