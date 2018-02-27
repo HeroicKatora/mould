@@ -60,25 +60,30 @@ namespace mould {
     Buffer<Immediate> im_output = { bytecode.immediates };
     auto remaining = format_buffer(format_str);
 
+    FormatSpecifier<const CharType<format_str>> format_spec;
+
     while(!remaining.empty()) {
       /* Parse the next literal */
       const auto literal = get_string_literal(remaining);
       if(!literal.empty()) {
         /* Write the string write bytecode */
-        op_output << static_cast<Codepoint>(OpCode::Literal);
-        im_output << literal.literal;
+        // op_output << static_cast<Codepoint>(OpCode::Literal);
+        op_output << literal;
+        im_output << literal;
       }
 
       if(remaining.empty()) break;
-      const auto format_spec = get_format_specifier(remaining);
 
-      if(!format_spec.complete) {
+      if(!get_format_specifier(remaining, format_spec)) {
         bytecode.error = true;
         break;
       }
+
+      op_output << format_spec;
+      im_output << format_spec;
     }
 
-    op_output << static_cast<Codepoint>(OpCode::Stop);
+    op_output << EncodedOperation::Stop();
     return bytecode;
   }
 }

@@ -5,9 +5,6 @@
 #include "bytecode.hpp"
 
 namespace mould {
-  using ByteCodeBuffer = Buffer<const Codepoint>;
-  using ImmediateBuffer = Buffer<const Immediate>;
-
   template<size_t N>
   constexpr ByteCodeBuffer byte_code_buffer(const Codepoint(&buffer)[N]) {
     return { std::begin(buffer), std::end(buffer) };
@@ -18,6 +15,54 @@ namespace mould {
     return { std::begin(buffer), std::end(buffer) };
   }
 
+  // Holds an encoded operation and room for the maximum amount of additions.
+  struct DebuggableOperation {
+    EncodedOperation opcode;
+
+    EncodedStringLiteral literal;
+
+    Codepoint index;
+    EncodedFormat format;
+
+    Immediate width;
+    Immediate precision;
+    Immediate padding;
+
+    constexpr bool read(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
+      if(!(code >> opcode)) {
+        return false;
+      }
+      switch(opcode.opcode()) {
+      case OpCode::Stop:
+        return true;
+      case OpCode::Insert:
+        if(opcode.insert_index() == CodeValue::ReadCode
+           && !(code >> index)) {
+          return false;
+        }
+        if(opcode.insert_format() == ImmediateValue::ReadImmediate
+           && !_read_insert_format(code, immediates)) {
+          return false;
+        }
+        return true;
+      case OpCode::Literal:
+        return _read_literal(code, immediates);
+      default:
+        return false;
+      }
+    }
+
+    constexpr bool _read_literal(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
+      return (immediates >> literal);
+    }
+
+    constexpr bool _read_insert_format(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
+      if(!(immediates >> format)) {
+
+      }
+    }
+  };
+
   template<typename CharT = const char>
   std::string describe_next_byte_code(
     ByteCodeBuffer& op_buffer,
@@ -25,42 +70,28 @@ namespace mould {
   ) {
     Immediate auto_index = 0;
     Immediate normal_index = 0;
+
+    EncodedOperation operation {};
     EncodedStringLiteral literal {};
 
     if(op_buffer.empty())
       return {};
 
-    switch(static_cast<OpCode>(*op_buffer.begin++)) {
-    case OpCode::Literal:
-      if(!(im_buffer >> literal)) return "!!!Missing literal immediate";
-      return std::string("Literal: \"")
-             + std::string(literal.begin_ptr<const CharT>(), literal.length)
-             + "\"";
-    case OpCode::Formatted_IndexAuto_FormatAuto:
-      return std::string("Formatted argument: index auto (")
-             + std::to_string(auto_index++)
-             + std::string("), format auto");
-    case OpCode::Formatted_IndexAuto_FormatDirect:
-      return std::string("Formatted argument: index auto (")
-             + std::to_string(auto_index++)
-             + std::string("), format direct");
-    case OpCode::Formatted_IndexCount_FormatAuto:
-      if(!(im_buffer >> normal_index)) return "!!!Missing index immediate";
-      auto_index = std::max(auto_index, normal_index + 1);
-      return std::string("Formatted argument: index ")
-             + std::to_string(normal_index)
-             + std::string(", format auto");
-    case OpCode::Formatted_IndexCount_FormatDirect:
-      if(!(im_buffer >> normal_index)) return "!!!Missing index immediate";
-      auto_index = std::max(auto_index, normal_index + 1);
-      return std::string("Formatted argument: index ")
-             + std::to_string(normal_index)
-             + std::string(", format direct");
-    case OpCode::Stop:
-      op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
-      return "Stop";
-    default:
-      return "!!!Unknown op code";
+    while((op_buffer >> operation)) {
+      switch(operation.opcode()) {
+      case OpCode::Literal:
+        if(!(im_buffer >> literal)) return "!!!Missing literal immediate";
+        return std::string("Literal: \"")
+               + std::string(literal.begin_ptr<const CharT>(), literal.length)
+               + "\"";
+      case OpCode::Insert:
+        break;
+      case OpCode::Stop:
+        op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
+        return "Stop";
+      default:
+        return "!!!Unknown op code";
+      }
     }
   }
 

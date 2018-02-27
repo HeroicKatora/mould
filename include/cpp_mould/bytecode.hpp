@@ -6,7 +6,7 @@ namespace mould {
   using Codepoint = unsigned char;
   using Immediate = size_t;
 
-  enum struct OpCode: Codepoint {
+  enum struct OpCode: unsigned char {
     // TODO: idea, we could encode a short (2**7 - 1) skip with literal, as
     // an offset from the previously written literal, the length of format
     // string should not be that long, typically. This would avoid an immediate
@@ -15,15 +15,29 @@ namespace mould {
     Literal   = 0 /* some literal with address embedded */,
 
      /* an argument from the environment, formatted */
-    Formatted_IndexAuto_FormatAuto = 1,
-    Formatted_IndexAuto_FormatDirect = 3,
-    Formatted_IndexCount_FormatAuto = 5,
-    Formatted_IndexCount_FormatDirect = 7,
+    Insert = 1,
 
-    Stop = 0xFF,
+    /* the format string has ended */
+    Stop = 2,
   };
 
-  enum struct FormattingKind: unsigned char {
+  enum struct CodeValue: unsigned char {
+    Auto     = 0 /* Can be inferred from the environment */,
+    ReadCode = 1 /* Should be read from the codepoint buffer */,
+  };
+
+  enum struct ImmediateValue: unsigned char {
+    Auto          = 0 /* Can be inferred */,
+    ReadImmediate = 1 /* Read from the immediate buffer */,
+  };
+
+  struct Operation {
+    OpCode         type;
+    CodeValue      index_source;
+    ImmediateValue format_source;
+  };
+
+  enum struct FormatKind: unsigned char {
     Auto     = 0, /* The kind is automatically chosen by the parameter */
 
     Decimal  = 1,
@@ -40,7 +54,7 @@ namespace mould {
     String   = 11,
   };
 
-  enum struct FlagValueKind: unsigned char {
+  enum struct InlineValue: unsigned char {
     Auto      = 0 /* Deduced from input type or default */,
     Immediate = 1 /* Extra intermediate following the Formatting specifier */,
     Inline    = 2 /* Stored in the 8 bit inline extension array. */,
@@ -62,18 +76,20 @@ namespace mould {
 
   struct Formatting {
     /* If everything is auto , this is encoded in the opcode */
-    FormattingKind kind;      /* 8 bits */
-    // TODO:technically only 4 bit for the kind, can we store something here?
-    // Maybe we could save and then preload the number of additional immediates.
-    // Doesn't sound too good though.
+    FormatKind  kind;      /* 4 bits */
 
-    FlagValueKind  width;     /* 2 bits */
-    FlagValueKind  precision; /* 2 bits */
+    InlineValue width;     /* 2 bits */
+    InlineValue precision; /* 2 bits */
 
     /* value is a character, inline of immediate can depend on char type */
-    FlagValueKind  padding;   /* 2 bits */
-    Alignment      alignment; /* 2 bits */
+    InlineValue padding;   /* 2 bits */
+    Alignment   alignment; /* 2 bits */
 
+    Sign        sign; /* 2 bits */
+
+    // TODO:technically only 14 bit for the kind, can we store something here?
+    // Maybe we could save and then preload the number of additional immediates.
+    // Doesn't sound too good though.
     // 16 bit used.
 
     // 6 inline values (48 bit) for all kinds of fancy stuff.
@@ -97,6 +113,12 @@ namespace mould {
 
     constexpr bool empty() const { return begin == end; }
   };
+
+  using ByteCodeBuffer = Buffer<const Codepoint>;
+  using ImmediateBuffer = Buffer<const Immediate>;
+
+  using ByteCodeOutputBuffer = Buffer<Codepoint>;
+  using ImmediateOutputBuffer = Buffer<Immediate>;
 }
 
 #endif
