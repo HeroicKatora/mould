@@ -1,6 +1,7 @@
 #ifndef CPP_MOULD_DEBUG_HPP
 #define CPP_MOULD_DEBUG_HPP
 #include <iterator>
+#include <sstream>
 
 #include "bytecode.hpp"
 
@@ -28,7 +29,7 @@ namespace mould {
     Immediate precision;
     Immediate padding;
 
-    bool read(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
+    constexpr bool read(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
       if(!(code >> opcode)) {
         return false;
       }
@@ -52,7 +53,7 @@ namespace mould {
       }
     }
 
-    bool _read_literal(
+    constexpr bool _read_literal(
       ByteCodeBuffer& code,
       ImmediateBuffer& immediates)
     {
@@ -108,6 +109,54 @@ namespace mould {
     }
   };
 
+  constexpr const char* describe(ImmediateValue val) {
+    if(val == ImmediateValue::Auto) return "Auto";
+    else return "Immediate";
+  }
+
+  constexpr const char* describe(FormatKind kind) {
+    switch(kind) {
+    case FormatKind::Auto: return "Auto";
+    case FormatKind::Decimal: return "Decimal";
+    case FormatKind::Binary: return "Binary";
+    case FormatKind::Octal: return "Octal";
+    case FormatKind::Hex: return "Hex";
+    case FormatKind::HEX: return "HEX";
+    case FormatKind::Exponent: return "Exponent";
+    case FormatKind::EXPONENT: return "EXPONENT";
+    case FormatKind::FPoint: return "Floating Point";
+    case FormatKind::FPOINT: return "FLOATING POINT";
+    case FormatKind::Pointer: return "Pointer";
+    case FormatKind::String: return "String";
+    }
+  }
+
+  constexpr const char* describe(InlineValue kind) {
+    switch(kind) {
+    case InlineValue::Auto: return "Auto";
+    case InlineValue::Immediate: return "Immediate";
+    case InlineValue::Inline: return "Inline";
+    case InlineValue::Parameter: return "Parameter";
+    }
+  }
+
+  constexpr const char* describe(Alignment align) {
+    switch(align) {
+    case Alignment::Default: return "Default";
+    case Alignment::Left: return "Left";
+    case Alignment::Right: return "Right";
+    case Alignment::Center: return "Center";
+    }
+  }
+
+  constexpr const char* describe(Sign sign) {
+    switch(sign) {
+    case Sign::Default: return "Default";
+    case Sign::Always: return "Always";
+    case Sign::Pad: return "Pad";
+    }
+  }
+
   template<typename CharT = const char>
   std::string describe_next_byte_code(
     ByteCodeBuffer& op_buffer,
@@ -126,8 +175,21 @@ namespace mould {
                   operation.literal.begin_ptr<const CharT>(),
                   operation.literal.end_ptr<const CharT>())
                + "\"";
-      case OpCode::Insert:
-        return std::string("Insert format");
+      case OpCode::Insert: {
+        std::stringstream description(std::string{});
+        description << "Insert: format (" << describe(operation.opcode.insert_format());
+        description << ") kind (" << describe(operation.format.kind());
+        description << ") width (" << describe(operation.format.width())
+                    << ", " << operation.width;
+        description << ") precision (" << describe(operation.format.precision())
+                    << ", " << operation.precision;
+        description << ") padding (" << describe(operation.format.padding())
+                    << ", " << operation.padding;
+        description << ") alignment (" << describe(operation.format.alignment());
+        description << ") sign (" << describe(operation.format.sign());
+        description << ")";
+        return description.str();
+      }
       case OpCode::Stop:
         op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
         return "Stop";
