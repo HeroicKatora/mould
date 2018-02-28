@@ -112,39 +112,45 @@ namespace mould {
 
 namespace mould::internal {
   std::string Engine::execute() {
-    Immediate auto_index = 0;
-    Immediate normal_index = 0;
+    unsigned auto_index = 0;
 
-    DebuggableOperation operation;
+    DebuggableOperation operation = {};
 
     while(operation.read(byte_code, immediates) == ReadStatus::NoError) {
       switch(operation.opcode.opcode()) {
       case OpCode::Literal:
         output.append(
           format_string.begin + operation.literal.offset,
-          operation.literal.length);
+          format_string.begin + operation.literal.offset + operation.literal.length);
         break;
       case OpCode::Insert: {
-          auto index = auto_index;
-          if(operation.format.index() == InlineValue::Inline) {
-            index = operation.index;
-            auto_index = std::max(auto_index, index + 1);
-          } else if(operation.format.index() == InlineValue::Auto) {
-            auto_index++;
+          unsigned index = auto_index;
+
+          auto& formatting = operation.formatting;
+          auto& description = formatting.format;
+
+          if(description.index == InlineValue::Inline) {
+            index = formatting.index;
           }
+
+          if(index >= auto_index)
+            auto_index = index + 1;
+
           auto& argument = begin[index];
-          auto formatting_fn = argument.formatter_for(operation.format.kind());
+          auto formatting_fn = argument.formatter_for(description.kind);
 
           // FIXME: we can determine at compile time which functions are needed!
           if(!formatting_fn)
-            return std::string("Formatting not supported: ") + describe(operation.format.kind());
+            return std::string("Formatting not supported: ") + describe(description.kind);
+
           auto format = Format {
-            operation.width,
-            operation.precision,
-            operation.padding,
-            operation.format.alignment(),
-            operation.format.sign()
+            formatting.width,
+            formatting.precision,
+            formatting.padding,
+            description.alignment,
+            description.sign
           };
+
           Formatter formatter {*this, format};
           formatting_fn(argument.argument, formatter);
         } break;

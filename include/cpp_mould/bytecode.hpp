@@ -73,7 +73,7 @@ namespace mould::internal {
     Pad     = 2,
   };
 
-  struct Formatting {
+  struct FormatDescription {
     /* If everything is auto , this is encoded in the opcode */
     FormatKind  kind;      /* 4 bits */
 

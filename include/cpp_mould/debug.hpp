@@ -16,31 +16,12 @@ namespace mould::internal {
     return { std::begin(buffer), std::end(buffer) };
   }
 
-  enum struct ReadStatus {
-    NoError,
-    MissingOpcode,
-    MissingFormatImmediate,
-    MissingLiteralImmediate,
-    MissingWidth,
-    MissingPrecision,
-    MissingPadding,
-    InvalidIndex,
-    InvalidOpcode,
-    InvalidFormatImmediate,
-  };
-
   // Holds an encoded operation and room for the maximum amount of additions.
   struct DebuggableOperation {
     EncodedOperation opcode;
 
     EncodedStringLiteral literal;
-
-    Codepoint index;
-    EncodedFormat format;
-
-    Immediate width;
-    Immediate precision;
-    Immediate padding;
+    Formatting formatting;
 
     constexpr ReadStatus read(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
       if(!(code >> opcode)) {
@@ -51,81 +32,14 @@ namespace mould::internal {
         if(opcode.insert_format() == ImmediateValue::Auto)
           return ReadStatus::NoError;
         else if(opcode.insert_format() == ImmediateValue::ReadImmediate) {
-          return _read_insert_format(code, immediates);
+          return (immediates >> formatting);
         }
         return ReadStatus::InvalidFormatImmediate;
       case OpCode::Literal:
-        return _read_literal(code, immediates);
+        return (immediates >> literal);
       default:
         return ReadStatus::InvalidOpcode;
       }
-    }
-
-    constexpr ReadStatus _read_literal(
-      ByteCodeBuffer& code,
-      ImmediateBuffer& immediates)
-    {
-      if(!(immediates >> literal)) {
-        return ReadStatus::MissingLiteralImmediate;
-      }
-      return ReadStatus::NoError;
-    }
-
-    constexpr ReadStatus _read_insert_format(
-      ByteCodeBuffer& code,
-      ImmediateBuffer& immediates)
-    {
-      unsigned char inline_index = 0;
-      if(!(immediates >> format)) {
-        return ReadStatus::MissingFormatImmediate;
-      }
-
-      switch(format.width()) {
-      case InlineValue::Immediate:
-        if(!(immediates >> width))
-          return ReadStatus::MissingWidth;
-        break;
-      case InlineValue::Inline: [[falltrough]]
-      case InlineValue::Parameter:
-        width = format.inline_value(inline_index++);
-      case InlineValue::Auto:
-        break;
-      }
-
-      switch(format.precision()) {
-      case InlineValue::Immediate:
-        if(!(immediates >> precision))
-          return ReadStatus::MissingPrecision;
-        break;
-      case InlineValue::Inline: [[falltrough]]
-      case InlineValue::Parameter:
-        precision = format.inline_value(inline_index++);
-      case InlineValue::Auto:
-        break;
-      }
-
-      switch(format.padding()) {
-      case InlineValue::Immediate:
-        if(!(immediates >> padding))
-          return ReadStatus::MissingPadding;
-        break;
-      case InlineValue::Inline: [[falltrough]]
-      case InlineValue::Parameter:
-        padding = format.inline_value(inline_index++);
-      case InlineValue::Auto:
-        break;
-      }
-
-      switch(format.index()) {
-      case InlineValue::Inline:
-        index = format.inline_value(inline_index++);
-      case InlineValue::Auto:
-        break;
-      default:
-        return ReadStatus::InvalidIndex;
-      }
-
-      return ReadStatus::NoError;
     }
   };
 
@@ -217,15 +131,15 @@ namespace mould::internal {
       case OpCode::Insert: {
         std::stringstream description(std::string{});
         description << "Insert: format (" << describe(operation.opcode.insert_format());
-        description << ") kind (" << describe(operation.format.kind());
-        description << ") width (" << describe(operation.format.width())
-                    << ", " << operation.width;
-        description << ") precision (" << describe(operation.format.precision())
-                    << ", " << operation.precision;
-        description << ") padding (" << describe(operation.format.padding())
-                    << ", " << operation.padding;
-        description << ") alignment (" << describe(operation.format.alignment());
-        description << ") sign (" << describe(operation.format.sign());
+        description << ") kind (" << describe(operation.formatting.format.kind);
+        description << ") width (" << describe(operation.formatting.format.width)
+                    << ", " << operation.formatting.width;
+        description << ") precision (" << describe(operation.formatting.format.precision)
+                    << ", " << operation.formatting.precision;
+        description << ") padding (" << describe(operation.formatting.format.padding)
+                    << ", " << operation.formatting.padding;
+        description << ") alignment (" << describe(operation.formatting.format.alignment);
+        description << ") sign (" << describe(operation.formatting.format.sign);
         description << ")";
         return description.str();
       }

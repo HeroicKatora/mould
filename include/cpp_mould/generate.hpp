@@ -36,24 +36,6 @@ namespace mould::internal {
     }
   };
 
-  struct CompressedFormatting {
-    Immediate _immediates[4];
-    unsigned char used_immediates;
-
-    constexpr void append_immediate(Immediate value) {
-      _immediates[used_immediates++] = value;
-    }
-  };
-
-  struct FormattingArguments {
-    Formatting format;
-    Immediate width, precision, padding;
-
-    Codepoint index;
-
-    constexpr CompressedFormatting compress() const;
-  };
-
   // Holds an operation and all possible values it would require.  Can then
   // generate a `minimal` opcode for the operation.
   struct OperationBuilder {
@@ -63,7 +45,7 @@ namespace mould::internal {
     EncodedStringLiteral literal;
 
     // The values for an insert operation.
-    FormattingArguments format;
+    Formatting format;
 
     constexpr void set_formatting(Formatting format) {
       format = format;
@@ -147,28 +129,6 @@ namespace mould::internal {
     format.operation = builder.Build();
 
     return true;
-  }
-
-  constexpr CompressedFormatting FormattingArguments::compress() const {
-    auto final_format = format;
-
-    unsigned char used_inlines = 0;
-    if(format.index == InlineValue::Inline)
-      final_format.inlines[used_inlines++] = index;
-
-    CompressedFormatting compressed = {};
-
-    auto encoded_format = EncodedFormat{ final_format };
-    compressed.append_immediate(encoded_format.encoded);
-
-    if(final_format.width == InlineValue::Immediate)
-      compressed.append_immediate(width);
-    if(final_format.precision == InlineValue::Immediate)
-      compressed.append_immediate(precision);
-    if(final_format.padding == InlineValue::Immediate)
-      compressed.append_immediate(padding);
-
-    return compressed;
   }
 
   constexpr BuiltOperation OperationBuilder::Build() {

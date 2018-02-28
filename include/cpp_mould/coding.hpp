@@ -69,16 +69,16 @@ namespace mould::internal {
     }
   };
 
-  struct EncodedFormat {
+  struct EncodedFormatDescription {
     Immediate encoded;
 
-    constexpr EncodedFormat()
+    constexpr EncodedFormatDescription()
       : encoded() {}
-    constexpr EncodedFormat(Immediate encoded)
+    constexpr EncodedFormatDescription(Immediate encoded)
       : encoded(encoded)
       { }
 
-    constexpr EncodedFormat(Formatting format)
+    constexpr EncodedFormatDescription(FormatDescription format)
       : encoded(0)
     {
       for(int i = 0; i < 6; i++) encoded = (encoded|format.inlines[i]) << 8;
@@ -92,53 +92,89 @@ namespace mould::internal {
       encoded |= (static_cast<unsigned char>(format.index) & Immediate{0x3}) << 14;
     }
 
-    constexpr FormatKind kind() {
+    constexpr FormatDescription FullDescription() const {
+      FormatDescription description = {};
+      description.kind = kind();
+      description.width = width();
+      description.precision = precision();
+      description.padding = padding();
+      description.alignment = alignment();
+      description.sign = sign();
+      description.index = index();
+
+      for(int i = 0; i < 6; i++) description.inlines[i] = inline_value(i);
+      return description;
+    }
+
+    constexpr FormatKind kind() const {
       return static_cast<FormatKind>(encoded & 0xF);
     }
 
-    constexpr InlineValue width() {
+    constexpr InlineValue width() const {
       return static_cast<InlineValue>((encoded >> 4) & 0x3);
     }
 
-    constexpr InlineValue precision() {
+    constexpr InlineValue precision() const {
       return static_cast<InlineValue>((encoded >> 6) & 0x3);
     }
 
-    constexpr InlineValue padding() {
+    constexpr InlineValue padding() const {
       return static_cast<InlineValue>((encoded >> 8) & 0x3);
     }
 
-    constexpr Alignment alignment() {
+    constexpr Alignment alignment() const {
       return static_cast<Alignment>((encoded >> 10) & 0x3);
     }
 
-    constexpr Sign sign() {
+    constexpr Sign sign() const {
       return static_cast<Sign>((encoded >> 12) & 0x3);
     }
 
-    constexpr InlineValue index() {
+    constexpr InlineValue index() const {
       return static_cast<InlineValue>((encoded >> 14) & 0x3);
     }
 
-    constexpr unsigned char inline_value(unsigned char index) {
+    constexpr unsigned char inline_value(unsigned char index) const {
       return static_cast<unsigned char>((encoded >> (16 + 8*index)) & 0xFF);
     }
 
     friend constexpr bool operator<<(
       Buffer<Immediate>& buffer,
-      EncodedFormat operation)
+      EncodedFormatDescription operation)
     {
       return (buffer << operation.encoded);
     }
 
     friend constexpr bool operator>>(
       Buffer<const Immediate>& buffer,
-      EncodedFormat& operation)
+      EncodedFormatDescription& operation)
     {
-      EncodedFormat internal {};
+      EncodedFormatDescription internal {};
       return (buffer >> internal.encoded)
         ? (operation = internal, true)
         : false;
+    }
+  };
+
+  enum struct ReadStatus {
+    NoError,
+    MissingOpcode,
+    MissingFormatImmediate,
+    MissingLiteralImmediate,
+    MissingWidth,
+    MissingPrecision,
+    MissingPadding,
+    InvalidIndex,
+    InvalidOpcode,
+    InvalidFormatImmediate,
+  };
+
+  struct EncodedFormatting {
+    Immediate _immediates[4];
+    unsigned char used_immediates;
+
+    constexpr void append_immediate(Immediate value) {
+      _immediates[used_immediates++] = value;
     }
   };
 
@@ -161,14 +197,109 @@ namespace mould::internal {
       return (buffer << literal.offset) && (buffer << literal.length);
     }
 
-    friend constexpr bool operator>>(
+    friend constexpr ReadStatus operator>>(
       Buffer<const Immediate>& buffer,
       EncodedStringLiteral& literal)
     {
       EncodedStringLiteral internal {};
-      return ((buffer >> internal.offset) && (buffer >> internal.length))
-        ? (literal = internal, true)
-        : false;
+      if(!(buffer >> internal.offset))
+        return ReadStatus::MissingLiteralImmediate;
+      if(!(buffer >> internal.length))
+        return ReadStatus::MissingLiteralImmediate;
+      literal = internal;
+      return ReadStatus::NoError;
+    }
+  };
+
+  struct Formatting {
+    FormatDescription format;
+
+    Immediate width, precision, padding;
+    Codepoint index;
+
+    constexpr EncodedFormatting compress() const {
+      auto final_format = format;
+
+      unsigned char used_inlines = 0;
+      if(format.index == InlineValue::Inline)
+        final_format.inlines[used_inlines++] = index;
+
+      EncodedFormatting compressed = {};
+
+      auto encoded_format = EncodedFormatDescription{ final_format };
+      compressed.append_immediate(encoded_format.encoded);
+
+      if(final_format.width == InlineValue::Immediate)
+        compressed.append_immediate(width);
+      if(final_format.precision == InlineValue::Immediate)
+        compressed.append_immediate(precision);
+      if(final_format.padding == InlineValue::Immediate)
+        compressed.append_immediate(padding);
+
+      return compressed;
+    }
+
+    friend constexpr ReadStatus operator>>(
+      ImmediateBuffer& immediates,
+      Formatting& target)
+    {
+      Formatting decoded = {};
+      EncodedFormatDescription format = {};
+
+      unsigned char inline_index = 0;
+      if(!(immediates >> format)) {
+        return ReadStatus::MissingFormatImmediate;
+      }
+
+      decoded.format = format.FullDescription();
+
+      switch(format.width()) {
+      case InlineValue::Immediate:
+        if(!(immediates >> decoded.width))
+          return ReadStatus::MissingWidth;
+        break;
+      case InlineValue::Inline: [[falltrough]]
+      case InlineValue::Parameter:
+        decoded.width = format.inline_value(inline_index++);
+      case InlineValue::Auto:
+        break;
+      }
+
+      switch(format.precision()) {
+      case InlineValue::Immediate:
+        if(!(immediates >> decoded.precision))
+          return ReadStatus::MissingPrecision;
+        break;
+      case InlineValue::Inline: [[falltrough]]
+      case InlineValue::Parameter:
+        decoded.precision = format.inline_value(inline_index++);
+      case InlineValue::Auto:
+        break;
+      }
+
+      switch(format.padding()) {
+      case InlineValue::Immediate:
+        if(!(immediates >> decoded.padding))
+          return ReadStatus::MissingPadding;
+        break;
+      case InlineValue::Inline: [[falltrough]]
+      case InlineValue::Parameter:
+        decoded.padding = format.inline_value(inline_index++);
+      case InlineValue::Auto:
+        break;
+      }
+
+      switch(format.index()) {
+      case InlineValue::Inline:
+        decoded.index = format.inline_value(inline_index++);
+      case InlineValue::Auto:
+        break;
+      default:
+        return ReadStatus::InvalidIndex;
+      }
+
+      target = decoded;
+      return ReadStatus::NoError;
     }
   };
 }
