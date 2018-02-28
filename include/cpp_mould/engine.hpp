@@ -36,11 +36,11 @@ namespace mould::internal {
     TypeErasedArgument* end;
   };
 
-  template<typename T>
-  constexpr FormatKind auto_formatter();
 
   using formatting_function = bool (*)(const void*, Formatter);
 
+  template<typename T>
+  constexpr formatting_function auto_formatter();
   template<typename T>
   constexpr formatting_function decimal_formatter();
   template<typename T>
@@ -49,20 +49,19 @@ namespace mould::internal {
 
   struct TypeErasedFormatter {
     template<typename T>
-    static TypeErasedFormatter Construct() {
-      TypeErasedFormatter formatter;
-      formatter.decimal = decimal_formatter<T>();
-      formatter.string = string_formatter<T>();
-      // Hacky, this gets assigned to itself (nullptr) when return is Auto
-      formatter.automatic = formatter.formatter_for(auto_formatter<T>());
-      return formatter;
+    constexpr static TypeErasedFormatter Construct() {
+      return TypeErasedFormatter {
+        auto_formatter<T>(),
+        decimal_formatter<T>(),
+        string_formatter<T>(),
+      };
     }
 
     formatting_function automatic;
     formatting_function decimal;
     formatting_function string;
 
-    formatting_function formatter_for(FormatKind kind) const {
+    constexpr formatting_function formatter_for(FormatKind kind) const {
       switch(kind) {
       case FormatKind::Auto: return automatic;
       case FormatKind::Decimal: return decimal;
@@ -127,6 +126,10 @@ namespace mould::internal {
           }
           auto& argument = begin[index];
           auto formatting_fn = argument.formatter_for(operation.format.kind());
+
+          // FIXME: we can determine at compile time which functions are needed!
+          if(!formatting_fn)
+            return std::string("Formatting not supported: ") + describe(operation.format.kind());
           auto format = Format {
             operation.width,
             operation.precision,
@@ -145,35 +148,36 @@ namespace mould::internal {
     return "!!!Failure, no stop but end of buffer";
   }
 
-  template<typename T, typename=decltype(::mould::format_auto<T>())>
-  struct auto_format_impl;
   template<typename T>
-  struct auto_format_impl<T, NoAuto> { constexpr static FormatKind value = FormatKind::Auto; };
-  template<typename T>
-  struct auto_format_impl<T, AutoDecimal> { constexpr static FormatKind value = FormatKind::Decimal; };
-  template<typename T>
-  struct auto_format_impl<T, AutoString> { constexpr static FormatKind value = FormatKind::String; };
-
-
-  template<typename T>
-  bool _decimal_formatter(const void* value, Formatter formatter) {
+  inline static bool _decimal_formatter(const void* value, Formatter formatter) {
     return ::mould::format_decimal(*reinterpret_cast<const T*>(value), formatter);
   }
 
   template<typename T>
-  bool _string_formatter(const void* value, Formatter formatter) {
+  inline static bool _string_formatter(const void* value, Formatter formatter) {
     return ::mould::format_string(*reinterpret_cast<const T*>(value), formatter);
   }
 
   template<typename T>
-  constexpr FormatKind auto_formatter() {
-    return auto_format_impl<T>::value;
+  T _declval();
+
+  template<typename T>
+  constexpr formatting_function auto_formatter() {
+    using Selection =
+      decltype(::mould::format_auto(_declval<const T&>()));
+    if constexpr(std::is_same<AutoDecimal, Selection>::value) {
+      return _decimal_formatter<T>;
+    } else if constexpr(std::is_same<AutoString, Selection>::value) {
+      return _string_formatter<T>;
+    } else {
+      return nullptr;
+    }
   }
 
   template<typename T>
   constexpr formatting_function decimal_formatter() {
     using ImplementationCanary =
-      decltype(::mould::format_decimal(std::declval<const T&>(), std::declval<Formatter>()));
+      decltype(::mould::format_decimal(_declval<const T&>(), _declval<Formatter>()));
     if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
       return nullptr;
     } else {
@@ -184,7 +188,7 @@ namespace mould::internal {
   template<typename T>
   constexpr formatting_function string_formatter() {
     using ImplementationCanary =
-      decltype(::mould::format_string(std::declval<const T&>(), std::declval<Formatter>()));
+      decltype(::mould::format_string(_declval<const T&>(), _declval<Formatter>()));
     if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
       return nullptr;
     } else {

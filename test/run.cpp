@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include <cpp_mould/argument.hpp>
 #include <cpp_mould/compile.hpp>
 #include <cpp_mould/engine.hpp>
 

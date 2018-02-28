@@ -15,7 +15,7 @@ namespace mould {
   struct AutoString;
 
   template<typename T>
-  NoAuto format_auto();
+  NoAuto format_auto(const T&);
 
   template<typename T>
   NotImplemented format_decimal(const T& value, Formatter formatter);
@@ -51,6 +51,8 @@ namespace mould {
   NotImplemented format_string(const T& value, Formatter formatter);
 
   /* Standard definition for int */
+  AutoDecimal format_auto(const int&);
+
   bool format_decimal(const int& value, Formatter formatter) {
     formatter.append("Some int");
   }
