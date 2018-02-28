@@ -30,7 +30,7 @@ namespace mould {
 
     // Get a mutable buffer into which the encoded value can be written. This
     // may fail, in which case a 0-length buffer is returned.
-    std::string_view reserve(size_t length) const;
+    char* reserve(size_t length) const;
 
     Format& format() const;
   private:

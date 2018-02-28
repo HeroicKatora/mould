@@ -175,9 +175,9 @@ namespace mould::internal {
   constexpr formatting_function auto_formatter() {
     constexpr auto selection = decltype(format_auto(std::declval<const T&>()))::value;
     if constexpr(selection == AutoFormattingChoice::Decimal) {
-      return decimal_formatter<T>();
+      return _decimal_formatter<T>;
     } else if constexpr(selection == AutoFormattingChoice::String) {
-      return string_formatter<T>();
+      return _string_formatter<T>;
     } else {
       return nullptr;
     }
@@ -226,6 +226,12 @@ namespace mould {
 
   inline void Formatter::append(std::string_view sv) const {
     engine.output.append(sv);
+  }
+
+  inline char* Formatter::reserve(size_t length) const {
+    const auto start = engine.output.size();
+    engine.output.resize(engine.output.size() + length, ' ');
+    return engine.output.data() + start;
   }
 }
 

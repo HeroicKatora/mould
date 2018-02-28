@@ -73,14 +73,6 @@ namespace mould {
   template<typename T>
   NotImplemented format_string(const T& value, Formatter formatter);
 
-  /* Standard definition for int */
-  AutoFormat<AutoFormattingChoice::Decimal> format_auto(const int&);
-
-  FormattingResult format_decimal(const int& value, Formatter formatter) {
-    formatter.append("Some int");
-    return FormattingResult::Success;
-  }
-
   /* Standard implementation for const char* */
   AutoFormat<AutoFormattingChoice::String> format_auto(const char*);
 
