@@ -99,7 +99,7 @@ namespace mould::internal {
 
     literal.operation = builder.Build();
 
-    return literal_begin < buffer.begin;
+    return buffer.begin < input.buffer.end;
   }
 
   template<typename CharT>
@@ -144,6 +144,11 @@ namespace mould::internal {
         if(op.insert_format == ImmediateValue::Auto)
           return built;
         auto compressed = format.compress();
+        if(compressed.used_immediates == 0) {
+          op.insert_format = ImmediateValue::Auto;
+          built.operation = op;
+          return built;
+        }
         for(int i = 0; i < compressed.used_immediates; i++)
           built.append_immediate(compressed._immediates[i]);
         return built;

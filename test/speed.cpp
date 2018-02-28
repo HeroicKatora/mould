@@ -1,16 +1,15 @@
 #include <iostream>
 #include <cpp_mould.hpp>
 
-using namespace mould;
-
-static constexpr char format[] = "{}";
+static constexpr char format[] = "Hello {}\n";
 
 int main() {
 	std::ios::sync_with_stdio(false);
 
-	constexpr auto formatter = compile<format>();
+	constexpr auto formatter = mould::compile<format>();
 
 	for(int i = 0; i < 2000000; i++) {
+		std::cout << mould::format(formatter, "world");
 /* Format equivalent to "%0.10f:%04d:%+g:%s:%p:%c:%%\n" */
 	}
 }
