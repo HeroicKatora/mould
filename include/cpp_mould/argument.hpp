@@ -7,15 +7,38 @@
 #include "format.hpp"
 
 namespace mould {
+
+  // Default return type which signals that the formatting is not possible.
+  // Through this, a specialization might also be explicitely disallowed.
   struct NotImplemented;
-  using Implemented = bool;
 
-  struct NoAuto;
-  struct AutoDecimal;
-  struct AutoString;
+  // Return value of a valid formatting function.
+  enum struct FormattingResult {
+    Success,
+    Error,
+  };
 
+  enum struct AutoFormattingChoice {
+    NoAuto,
+    Decimal,
+    Binary,
+    Octal,
+    Hex,
+    HEX,
+    Exponent,
+    EXPONENT,
+    Fpoint,
+    FPOINT,
+    Point,
+    String,
+  };
+
+  template<AutoFormattingChoice choice>
+  struct AutoFormat { static constexpr AutoFormattingChoice value = choice; };
+
+  // The argument here is always nullptr and only used for deciding the callee.
   template<typename T>
-  NoAuto format_auto(const T&);
+  AutoFormat<AutoFormattingChoice::NoAuto> format_auto(const T&);
 
   template<typename T>
   NotImplemented format_decimal(const T& value, Formatter formatter);
@@ -51,16 +74,19 @@ namespace mould {
   NotImplemented format_string(const T& value, Formatter formatter);
 
   /* Standard definition for int */
-  AutoDecimal format_auto(const int&);
+  AutoFormat<AutoFormattingChoice::Decimal> format_auto(const int&);
 
-  bool format_decimal(const int& value, Formatter formatter) {
+  FormattingResult format_decimal(const int& value, Formatter formatter) {
     formatter.append("Some int");
+    return FormattingResult::Success;
   }
 
-  AutoString format_auto(const char*);
+  /* Standard implementation for const char* */
+  AutoFormat<AutoFormattingChoice::String> format_auto(const char*);
 
-  bool format_string(const char* value, Formatter formatter) {
+  FormattingResult format_string(const char* value, Formatter formatter) {
     formatter.append(value);
+    return FormattingResult::Success;
   }
 }
 

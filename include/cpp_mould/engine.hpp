@@ -40,7 +40,7 @@ namespace mould::internal {
   };
 
 
-  using formatting_function = bool (*)(const void*, Formatter);
+  using formatting_function = FormattingResult (*)(const void*, Formatter);
 
   template<typename T>
   constexpr formatting_function auto_formatter();
@@ -152,7 +152,9 @@ namespace mould::internal {
           };
 
           Formatter formatter {*this, format};
-          formatting_fn(argument.argument, formatter);
+          auto result = formatting_fn(argument.argument, formatter);
+          if(result == FormattingResult::Error)
+            return std::string("Error while formatting");
         } break;
       }
     }
@@ -160,23 +162,22 @@ namespace mould::internal {
   }
 
   template<typename T>
-  inline static bool _decimal_formatter(const void* value, Formatter formatter) {
+  inline static FormattingResult _decimal_formatter(const void* value, Formatter formatter) {
     return ::mould::format_decimal(*reinterpret_cast<const T*>(value), formatter);
   }
 
   template<typename T>
-  inline static bool _string_formatter(const void* value, Formatter formatter) {
+  inline static FormattingResult _string_formatter(const void* value, Formatter formatter) {
     return ::mould::format_string(*reinterpret_cast<const T*>(value), formatter);
   }
 
   template<typename T>
   constexpr formatting_function auto_formatter() {
-    using Selection =
-      decltype(::mould::format_auto(std::declval<const T&>()));
-    if constexpr(std::is_same<AutoDecimal, Selection>::value) {
-      return _decimal_formatter<T>;
-    } else if constexpr(std::is_same<AutoString, Selection>::value) {
-      return _string_formatter<T>;
+    constexpr auto selection = decltype(format_auto(std::declval<const T&>()))::value;
+    if constexpr(selection == AutoFormattingChoice::Decimal) {
+      return decimal_formatter<T>();
+    } else if constexpr(selection == AutoFormattingChoice::String) {
+      return string_formatter<T>();
     } else {
       return nullptr;
     }

@@ -99,7 +99,7 @@ namespace mould::internal {
 
     literal.operation = builder.Build();
 
-    return buffer.begin < input.buffer.end;
+    return true;
   }
 
   template<typename CharT>
