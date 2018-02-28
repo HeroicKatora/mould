@@ -37,24 +37,54 @@ namespace mould::internal {
   };
 
   template<typename T>
-  bool decimal_formatter(const void* value, Formatter formatter);
+  constexpr FormatKind auto_formatter();
+
+  using formatting_function = bool (*)(const void*, Formatter);
+
+  template<typename T>
+  constexpr formatting_function decimal_formatter();
+  template<typename T>
+  constexpr formatting_function string_formatter();
+
+
+  struct TypeErasedFormatter {
+    template<typename T>
+    static TypeErasedFormatter Construct() {
+      TypeErasedFormatter formatter;
+      formatter.decimal = decimal_formatter<T>();
+      formatter.string = string_formatter<T>();
+      // Hacky, this gets assigned to itself (nullptr) when return is Auto
+      formatter.automatic = formatter.formatter_for(auto_formatter<T>());
+      return formatter;
+    }
+
+    formatting_function automatic;
+    formatting_function decimal;
+    formatting_function string;
+
+    formatting_function formatter_for(FormatKind kind) const {
+      switch(kind) {
+      case FormatKind::Auto: return automatic;
+      case FormatKind::Decimal: return decimal;
+      case FormatKind::String: return string;
+      }
+    }
+  };
 
   struct TypeErasedArgument {
     template<typename T>
     TypeErasedArgument(const T& value)
-      : argument((const void*) std::addressof(value)),
-        decimal(decimal_formatter<T>), as_value(value)
+      : formatter(TypeErasedFormatter::Construct<T>()),
+        argument((const void*) std::addressof(value)),
+        as_value(value)
       { }
 
-    using formatting_function = bool (*)(const void*, Formatter);
-
-    const void*     argument;
-    const Immediate as_value;
-
-    formatting_function decimal;
+    TypeErasedFormatter formatter;
+    const void*         argument;
+    const Immediate     as_value;
 
     formatting_function formatter_for(FormatKind kind) const {
-      return decimal;
+      return formatter.formatter_for(kind);
     }
   };
 }
@@ -108,15 +138,58 @@ namespace mould::internal {
           formatting_fn(argument.argument, formatter);
         } break;
       case OpCode::Stop:
-        return output;
+        // We can clear the internal buffer
+        return std::move(output);
       }
     }
     return "!!!Failure, no stop but end of buffer";
   }
 
+  template<typename T, typename=decltype(::mould::format_auto<T>())>
+  struct auto_format_impl;
   template<typename T>
-  bool decimal_formatter(const void* value, Formatter formatter) {
+  struct auto_format_impl<T, NoAuto> { constexpr static FormatKind value = FormatKind::Auto; };
+  template<typename T>
+  struct auto_format_impl<T, AutoDecimal> { constexpr static FormatKind value = FormatKind::Decimal; };
+  template<typename T>
+  struct auto_format_impl<T, AutoString> { constexpr static FormatKind value = FormatKind::String; };
+
+
+  template<typename T>
+  bool _decimal_formatter(const void* value, Formatter formatter) {
     return ::mould::format_decimal(*reinterpret_cast<const T*>(value), formatter);
+  }
+
+  template<typename T>
+  bool _string_formatter(const void* value, Formatter formatter) {
+    return ::mould::format_string(*reinterpret_cast<const T*>(value), formatter);
+  }
+
+  template<typename T>
+  constexpr FormatKind auto_formatter() {
+    return auto_format_impl<T>::value;
+  }
+
+  template<typename T>
+  constexpr formatting_function decimal_formatter() {
+    using ImplementationCanary =
+      decltype(::mould::format_decimal(std::declval<const T&>(), std::declval<Formatter>()));
+    if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
+      return nullptr;
+    } else {
+      return _decimal_formatter<T>;
+    }
+  }
+
+  template<typename T>
+  constexpr formatting_function string_formatter() {
+    using ImplementationCanary =
+      decltype(::mould::format_string(std::declval<const T&>(), std::declval<Formatter>()));
+    if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
+      return nullptr;
+    } else {
+      return _string_formatter<T>;
+    }
   }
 }
 

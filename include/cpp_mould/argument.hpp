@@ -7,16 +7,15 @@
 #include "format.hpp"
 
 namespace mould {
-  namespace {
-    // A signalling type. This enables us the declare the functions and
-    // confidently not rely on SFINAE for everything.
-    struct NotImplemented;
-    using Implemented = bool;
+  struct NotImplemented;
+  using Implemented = bool;
 
-    struct AutoDecimal;
-    struct AutoBinary;
-    struct AutoOctal;
-  }
+  struct NoAuto;
+  struct AutoDecimal;
+  struct AutoString;
+
+  template<typename T>
+  NoAuto format_auto();
 
   template<typename T>
   NotImplemented format_decimal(const T& value, Formatter formatter);
