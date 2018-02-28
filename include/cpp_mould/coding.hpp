@@ -126,7 +126,7 @@ namespace mould::internal {
     }
 
     constexpr unsigned char inline_value(unsigned char index) {
-      return static_cast<unsigned char>((encoded >> 16 + 8*index) & 0xFF);
+      return static_cast<unsigned char>((encoded >> (16 + 8*index)) & 0xFF);
     }
 
     friend constexpr bool operator<<(
@@ -148,29 +148,22 @@ namespace mould::internal {
   };
 
   struct EncodedStringLiteral {
-    Immediate begin;
+    Immediate offset;
     Immediate length;
 
     constexpr EncodedStringLiteral()
-      : begin(), length()
+      : offset(), length()
       {}
 
-    template<typename CharT = const char>
-    constexpr EncodedStringLiteral(CharT* begin, CharT* end)
-      : begin((Immediate) begin), length(end - begin)
+    constexpr EncodedStringLiteral(Immediate offset, Immediate length)
+      : offset(offset), length(length)
       { }
-
-    template<typename CharT = const char>
-    constexpr CharT* begin_ptr() const { return (CharT*) begin; }
-
-    template<typename CharT = const char>
-    constexpr CharT* end_ptr() const { return ((CharT*) begin) + length; }
 
     friend constexpr bool operator<<(
       Buffer<Immediate>& buffer,
       EncodedStringLiteral literal)
     {
-      return (buffer << literal.begin) && (buffer << literal.length);
+      return (buffer << literal.offset) && (buffer << literal.length);
     }
 
     friend constexpr bool operator>>(
@@ -178,7 +171,7 @@ namespace mould::internal {
       EncodedStringLiteral& literal)
     {
       EncodedStringLiteral internal {};
-      return ((buffer >> internal.begin) && (buffer >> internal.length))
+      return ((buffer >> internal.offset) && (buffer >> internal.length))
         ? (literal = internal, true)
         : false;
     }

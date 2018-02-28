@@ -135,8 +135,9 @@ namespace mould::internal {
   template<typename CharT>
   class TypeErasedByteCode {
   public:
-    virtual internal::ByteCodeBuffer code_buffer() const = 0;
-    virtual internal::ImmediateBuffer immediate_buffer() const = 0;
+    virtual Buffer<const CharT> format_buffer() const = 0;
+    virtual ByteCodeBuffer code_buffer() const = 0;
+    virtual ImmediateBuffer immediate_buffer() const = 0;
   };
 }
 

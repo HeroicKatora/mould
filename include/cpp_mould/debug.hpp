@@ -159,6 +159,7 @@ namespace mould::internal {
 
   template<typename CharT = const char>
   std::string describe_next_byte_code(
+    const Buffer<CharT>& format_string,
     ByteCodeBuffer& op_buffer,
     ImmediateBuffer& im_buffer
   ) {
@@ -172,8 +173,8 @@ namespace mould::internal {
       case OpCode::Literal:
         return std::string("Literal: \"")
                + std::string(
-                  operation.literal.begin_ptr<const CharT>(),
-                  operation.literal.end_ptr<const CharT>())
+                  operation.literal.offset + format_string.begin,
+                  operation.literal.length)
                + "\"";
       case OpCode::Insert: {
         std::stringstream description(std::string{});
@@ -202,16 +203,18 @@ namespace mould::internal {
 
   template<typename CharT>
   struct Descriptor {
+    Buffer<const CharT> format_buffer;
     ByteCodeBuffer op_buffer;
     ImmediateBuffer im_buffer;
 
     constexpr Descriptor(const TypeErasedByteCode<CharT>& formatter) :
+        format_buffer { formatter.format_buffer() },
         op_buffer { formatter.code_buffer() },
         im_buffer { formatter.immediate_buffer() }
         { }
 
     constexpr bool empty() const {
-      op_buffer.empty() || im_buffer.empty();
+      return op_buffer.empty() || im_buffer.empty();
     };
 
     constexpr operator bool() const {
@@ -220,7 +223,7 @@ namespace mould::internal {
 
     std::string operator*() {
       if(empty()) return {};
-      return describe_next_byte_code<CharT>(op_buffer, im_buffer);
+      return describe_next_byte_code<const CharT>(format_buffer, op_buffer, im_buffer);
     }
   };
 }

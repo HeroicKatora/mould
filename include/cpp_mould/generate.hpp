@@ -106,16 +106,26 @@ namespace mould::internal {
   };
 
   template<typename CharT>
+  struct CompilationInput {
+    Buffer<CharT> full_input /* the complete input string */;
+    Buffer<CharT> buffer /* the remaining buffer */;
+  };
+
+  template<typename CharT>
   constexpr bool get_string_literal(
-    Buffer<CharT>& buffer,
+    CompilationInput<CharT>& input,
     StringLiteral<CharT>& literal)
   {
+    auto& buffer = input.buffer;
     const auto begin = buffer.begin;
     while(buffer.begin < buffer.end && *buffer.begin != '{') buffer.begin++;
 
     OperationBuilder builder = {};
     builder.op = { OpCode::Literal };
-    builder.literal = { begin, buffer.begin };
+    builder.literal = EncodedStringLiteral {
+      static_cast<Immediate>(begin - input.full_input.begin),
+      static_cast<Immediate>(buffer.begin - begin)
+    };
 
     literal.operation = builder.Build();
 
@@ -124,9 +134,10 @@ namespace mould::internal {
 
   template<typename CharT>
   constexpr bool get_format_specifier(
-    Buffer<CharT>& buffer,
+    CompilationInput<CharT>& input,
     FormatSpecifier<CharT>& format)
   {
+    auto& buffer = input.buffer;
     const auto begin = buffer.begin;
 
     for(;; buffer.begin++) {
@@ -162,7 +173,7 @@ namespace mould::internal {
     case OpCode::Stop:
       return built;
     case OpCode::Literal:
-      built.append_immediate(literal.begin);
+      built.append_immediate(literal.offset);
       built.append_immediate(literal.length);
       return built;
     case OpCode::Insert: {

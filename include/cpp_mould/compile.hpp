@@ -9,8 +9,9 @@
 
 namespace mould::internal {
   template<size_t N, typename CharT = const char>
-  constexpr Buffer<CharT> format_buffer(CharT (&format_str)[N]) {
-    return { std::begin(format_str), std::end(format_str) - 1 /* \0 term */ };
+  constexpr CompilationInput<CharT> format_buffer(CharT (&format_str)[N]) {
+    Buffer<CharT> buffer = { std::begin(format_str), std::end(format_str) - 1 };
+    return { buffer, buffer };
   }
 
   template<size_t N, typename CharT = const char>
@@ -21,7 +22,7 @@ namespace mould::internal {
     StringLiteral<CharT> literal_spec = { };
     FormatSpecifier<CharT> format_spec = { };
 
-    while(!remaining.empty()) {
+    while(!remaining.buffer.empty()) {
       /* Parse the next literal */
       if(!get_string_literal(remaining, literal_spec)) {
         break;
@@ -29,7 +30,7 @@ namespace mould::internal {
 
       count += literal_spec.operation.codepoints();
 
-      if(remaining.empty()) break;
+      if(remaining.buffer.empty()) break;
 
       if(!get_format_specifier(remaining, format_spec)) {
         break;
@@ -50,7 +51,7 @@ namespace mould::internal {
     StringLiteral<CharT> literal_spec;
     FormatSpecifier<CharT> format_spec;
 
-    while(!remaining.empty()) {
+    while(!remaining.buffer.empty()) {
       /* Parse the next literal */
       if(!get_string_literal(remaining, literal_spec)) {
         break;
@@ -58,7 +59,7 @@ namespace mould::internal {
 
       count += literal_spec.operation.immediates();
 
-      if(remaining.empty()) break;
+      if(remaining.buffer.empty()) break;
 
       if(!get_format_specifier(remaining, format_spec)) {
         break;
@@ -90,7 +91,7 @@ namespace mould::internal {
   template<size_t OP_COUNT, size_t IM_COUNT, typename _CharT>
   struct ByteCode: TypeErasedByteCode<_CharT> {
     using CharT = _CharT;
-    const CharT* original_string;
+    Buffer<const CharT> format_string;
 
     Codepoint code[OP_COUNT];
     Immediate immediates[IM_COUNT];
@@ -99,8 +100,13 @@ namespace mould::internal {
 
     template<size_t N>
     constexpr ByteCode(const CharT (&format)[N])
-      : original_string(format), code(), immediates(), error(false)
+      : format_string{ std::begin(format), std::end(format) }, code(),
+        immediates(), error(false)
       {}
+
+    Buffer<const CharT> format_buffer() const override {
+      return { format_string };
+    }
 
     ByteCodeBuffer code_buffer() const override {
       return { code };
@@ -133,7 +139,7 @@ namespace mould {
     StringLiteral<const CharType<format_str>> literal_spec;
     FormatSpecifier<const CharType<format_str>> format_spec;
 
-    while(!remaining.empty()) {
+    while(!remaining.buffer.empty()) {
       /* Parse the next literal */
       if(!get_string_literal(remaining, literal_spec)) {
         bytecode.error = true;
@@ -143,7 +149,7 @@ namespace mould {
       op_output << literal_spec.operation;
       im_output << literal_spec.operation;
 
-      if(remaining.empty()) break;
+      if(remaining.buffer.empty()) break;
 
       if(!get_format_specifier(remaining, format_spec)) {
         bytecode.error = true;

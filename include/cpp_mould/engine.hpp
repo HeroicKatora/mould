@@ -20,7 +20,9 @@ namespace mould::internal {
         const ByteCodeInterface& code,
         TypeErasedArgument* begin,
         TypeErasedArgument* end)
-      : byte_code(code.code_buffer()), immediates(code.immediate_buffer()),
+      : format_string(code.format_buffer()),
+        byte_code(code.code_buffer()),
+        immediates(code.immediate_buffer()),
         begin(begin), end(end)
         { }
 
@@ -28,6 +30,7 @@ namespace mould::internal {
 
     std::string execute();
   private:
+    Buffer<const char> format_string;
     ByteCodeBuffer  byte_code;
     ImmediateBuffer immediates;
 
@@ -118,8 +121,8 @@ namespace mould::internal {
       switch(operation.opcode.opcode()) {
       case OpCode::Literal:
         output.append(
-          operation.literal.begin_ptr<const char>(),
-          operation.literal.end_ptr<const char>());
+          format_string.begin + operation.literal.offset,
+          operation.literal.length);
         break;
       case OpCode::Insert: {
           auto index = auto_index;
@@ -207,15 +210,15 @@ namespace mould::internal {
 }
 
 namespace mould {
-  void Formatter::append(std::string arg) const {
+  inline void Formatter::append(std::string arg) const {
     engine.output.append(arg);
   }
 
-  void Formatter::append(const char* arg) const {
+  inline void Formatter::append(const char* arg) const {
     engine.output.append(arg);
   }
 
-  void Formatter::append(std::string_view sv) const {
+  inline void Formatter::append(std::string_view sv) const {
     engine.output.append(sv);
   }
 }
