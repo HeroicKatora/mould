@@ -5,7 +5,6 @@
 #include <iterator>
 
 #include "bytecode.hpp"
-#include "engine.hpp"
 #include "generate.hpp"
 
 namespace mould::internal {

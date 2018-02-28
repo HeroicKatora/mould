@@ -1,5 +1,6 @@
 Import('env')
 
 env.Append(CPPPATH='include')
-env.Program('test/speed.cpp')
 env.Program('test/debug.cpp')
+env.Program('test/run.cpp')
+# env.Program('test/speed.cpp')
