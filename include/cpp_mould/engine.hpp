@@ -70,12 +70,15 @@ namespace mould::internal {
     }
   };
 
+  template<typename T>
+  Immediate value_as_immediate(const T&);
+
   struct TypeErasedArgument {
     template<typename T>
     TypeErasedArgument(const T& value)
       : formatter(TypeErasedFormatter::Construct<T>()),
         argument((const void*) std::addressof(value)),
-        as_value(value)
+        as_value(value_as_immediate(value))
       { }
 
     TypeErasedFormatter formatter;
@@ -159,12 +162,9 @@ namespace mould::internal {
   }
 
   template<typename T>
-  T _declval();
-
-  template<typename T>
   constexpr formatting_function auto_formatter() {
     using Selection =
-      decltype(::mould::format_auto(_declval<const T&>()));
+      decltype(::mould::format_auto(std::declval<const T&>()));
     if constexpr(std::is_same<AutoDecimal, Selection>::value) {
       return _decimal_formatter<T>;
     } else if constexpr(std::is_same<AutoString, Selection>::value) {
@@ -177,7 +177,7 @@ namespace mould::internal {
   template<typename T>
   constexpr formatting_function decimal_formatter() {
     using ImplementationCanary =
-      decltype(::mould::format_decimal(_declval<const T&>(), _declval<Formatter>()));
+      decltype(::mould::format_decimal(std::declval<const T&>(), std::declval<Formatter>()));
     if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
       return nullptr;
     } else {
@@ -188,11 +188,20 @@ namespace mould::internal {
   template<typename T>
   constexpr formatting_function string_formatter() {
     using ImplementationCanary =
-      decltype(::mould::format_string(_declval<const T&>(), _declval<Formatter>()));
+      decltype(::mould::format_string(std::declval<const T&>(), std::declval<Formatter>()));
     if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
       return nullptr;
     } else {
       return _string_formatter<T>;
+    }
+  }
+
+  template<typename T>
+  Immediate value_as_immediate(const T& val) {
+    if constexpr(!std::is_constructible<Immediate, const T&>::value) {
+      return static_cast<Immediate>(-1);
+    } else {
+      return static_cast<Immediate>(val);
     }
   }
 }

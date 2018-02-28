@@ -56,6 +56,12 @@ namespace mould {
   bool format_decimal(const int& value, Formatter formatter) {
     formatter.append("Some int");
   }
+
+  AutoString format_auto(const char*);
+
+  bool format_string(const char* value, Formatter formatter) {
+    formatter.append(value);
+  }
 }
 
 #endif
