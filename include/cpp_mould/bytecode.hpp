@@ -16,14 +16,6 @@ namespace mould::internal {
 
      /* an argument from the environment, formatted */
     Insert = 1,
-
-    /* the format string has ended */
-    Stop = 2,
-  };
-
-  enum struct CodeValue: unsigned char {
-    Auto     = 0 /* Can be inferred from the environment */,
-    ReadCode = 1 /* Should be read from the codepoint buffer */,
   };
 
   enum struct ImmediateValue: unsigned char {
@@ -33,19 +25,14 @@ namespace mould::internal {
 
   struct Operation {
     OpCode         type;
-    CodeValue      insert_index /* Only interesting for OpCode::insert */;
     ImmediateValue insert_format /* Only interesting for OpCode::insert */;
 
     static constexpr Operation Literal() {
-      return { OpCode::Literal, CodeValue::Auto, ImmediateValue::Auto };
+      return { OpCode::Literal, ImmediateValue::Auto };
     }
 
-    static constexpr Operation Insert(CodeValue index, ImmediateValue format) {
-      return { OpCode::Insert, index, format };
-    }
-
-    static constexpr Operation Stop() {
-      return { OpCode::Stop, CodeValue::Auto, ImmediateValue::Auto };
+    static constexpr Operation Insert(ImmediateValue format) {
+      return { OpCode::Insert, format };
     }
   };
 
@@ -99,9 +86,7 @@ namespace mould::internal {
 
     Sign        sign; /* 2 bits */
 
-    // TODO:technically only 14 bit for the kind, can we store something here?
-    // Maybe we could save and then preload the number of additional immediates.
-    // Doesn't sound too good though.
+    InlineValue index;     /* 1.5 bits, immediate not allowed */
     // 16 bit used.
 
     // 6 inline values (48 bit) for all kinds of fancy stuff.

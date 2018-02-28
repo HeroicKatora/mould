@@ -126,9 +126,11 @@ namespace mould::internal {
         break;
       case OpCode::Insert: {
           auto index = auto_index;
-          if(operation.opcode.insert_index() == CodeValue::ReadCode) {
+          if(operation.format.index() == InlineValue::Inline) {
             index = operation.index;
             auto_index = std::max(auto_index, index + 1);
+          } else if(operation.format.index() == InlineValue::Auto) {
+            auto_index++;
           }
           auto& argument = begin[index];
           auto formatting_fn = argument.formatter_for(operation.format.kind());
@@ -146,12 +148,9 @@ namespace mould::internal {
           Formatter formatter {*this, format};
           formatting_fn(argument.argument, formatter);
         } break;
-      case OpCode::Stop:
-        // We can clear the internal buffer
-        return std::move(output);
       }
     }
-    return "!!!Failure, no stop but end of buffer";
+    return std::move(output);
   }
 
   template<typename T>

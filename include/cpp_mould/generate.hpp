@@ -16,31 +16,29 @@ namespace mould::internal {
     EncodedOperation operation;
     bool noop;
 
-    Codepoint _extension;
-    bool used_extension;
-
     Immediate _immediates[4];
     unsigned char used_immediates;
 
     constexpr BuiltOperation()
-      : operation{}, noop(true), _extension{}, used_extension{}, _immediates{},
-      used_immediates{}
+      : operation{}, noop(true), _immediates{}, used_immediates{}
       {}
 
     constexpr unsigned char codepoints() const {
-      return noop
-        ? 0
-        : (used_extension ? 2 : 1);
+      return noop ? 0 : 1;
     }
 
     constexpr unsigned char immediates() const {
       return used_immediates;
     }
 
-    constexpr void use_codepoint(Codepoint extension) {
-      used_extension = true;
-      _extension = extension;
+    constexpr void append_immediate(Immediate value) {
+      _immediates[used_immediates++] = value;
     }
+  };
+
+  struct CompressedFormatting {
+    Immediate _immediates[4];
+    unsigned char used_immediates;
 
     constexpr void append_immediate(Immediate value) {
       _immediates[used_immediates++] = value;
@@ -51,7 +49,9 @@ namespace mould::internal {
     Formatting format;
     Immediate width, precision, padding;
 
-    constexpr FormattingArguments compress() const;
+    Codepoint index;
+
+    constexpr CompressedFormatting compress() const;
   };
 
   // Holds an operation and all possible values it would require.  Can then
@@ -63,18 +63,7 @@ namespace mould::internal {
     EncodedStringLiteral literal;
 
     // The values for an insert operation.
-    Codepoint index;
     FormattingArguments format;
-
-    constexpr void set_index(Codepoint index) {
-      index = index;
-      op.insert_index = CodeValue::ReadCode;
-    }
-
-    constexpr void unset_index() {
-      index = 0;
-      op.insert_index = CodeValue::Auto;
-    }
 
     constexpr void set_formatting(Formatting format) {
       format = format;
@@ -92,7 +81,6 @@ namespace mould::internal {
   template<typename CharT>
   struct StringLiteral {
     BuiltOperation operation;
-
   };
 
   template<typename CharT>
@@ -153,7 +141,7 @@ namespace mould::internal {
     const Buffer<CharT> format_buffer = { begin, buffer.begin };
 
     OperationBuilder builder = {};
-    builder.op = Operation::Insert(CodeValue::Auto, ImmediateValue::Auto);
+    builder.op = Operation::Insert(ImmediateValue::Auto);
 
     format.buffer = format_buffer;
     format.operation = builder.Build();
@@ -161,8 +149,26 @@ namespace mould::internal {
     return true;
   }
 
-  constexpr FormattingArguments FormattingArguments::compress() const {
-    return *this;
+  constexpr CompressedFormatting FormattingArguments::compress() const {
+    auto final_format = format;
+
+    unsigned char used_inlines = 0;
+    if(format.index == InlineValue::Inline)
+      final_format.inlines[used_inlines++] = index;
+
+    CompressedFormatting compressed = {};
+
+    auto encoded_format = EncodedFormat{ final_format };
+    compressed.append_immediate(encoded_format.encoded);
+
+    if(final_format.width == InlineValue::Immediate)
+      compressed.append_immediate(width);
+    if(final_format.precision == InlineValue::Immediate)
+      compressed.append_immediate(precision);
+    if(final_format.padding == InlineValue::Immediate)
+      compressed.append_immediate(padding);
+
+    return compressed;
   }
 
   constexpr BuiltOperation OperationBuilder::Build() {
@@ -170,26 +176,16 @@ namespace mould::internal {
     built.operation = op;
     built.noop = (op.type == OpCode::Literal && literal.length == 0);
     switch(op.type) {
-    case OpCode::Stop:
-      return built;
     case OpCode::Literal:
       built.append_immediate(literal.offset);
       built.append_immediate(literal.length);
       return built;
     case OpCode::Insert: {
-        if(op.insert_index == CodeValue::ReadCode)
-          built.use_codepoint(index);
         if(op.insert_format == ImmediateValue::Auto)
           return built;
-        auto final_format = format.compress();
-        auto encoded_format = EncodedFormat{final_format.format};
-        built.append_immediate(encoded_format.encoded);
-        if(final_format.format.width == InlineValue::Immediate)
-          built.append_immediate(final_format.width);
-        if(final_format.format.precision == InlineValue::Immediate)
-          built.append_immediate(final_format.precision);
-        if(final_format.format.padding == InlineValue::Immediate)
-          built.append_immediate(final_format.padding);
+        auto compressed = format.compress();
+        for(int i = 0; i < compressed.used_immediates; i++)
+          built.append_immediate(compressed._immediates[i]);
         return built;
       };
     }
@@ -203,8 +199,6 @@ namespace mould::internal {
       return true;
 
     if(!(output << built.operation))
-      return false;
-    if(built.used_extension && !(output << built._extension))
       return false;
 
     return true;
@@ -221,6 +215,7 @@ namespace mould::internal {
       if(!(output << built._immediates[i]))
         return false;
     }
+
     return true;
   }
 }

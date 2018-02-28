@@ -39,7 +39,6 @@ namespace mould::internal {
       count += format_spec.operation.codepoints();
     }
 
-    count += 1;
     return N;
   }
 
@@ -160,7 +159,6 @@ namespace mould {
       im_output << format_spec.operation;
     }
 
-    op_output << EncodedOperation { Operation::Stop() };
     return bytecode;
   }
 }

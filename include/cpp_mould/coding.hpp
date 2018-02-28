@@ -35,29 +35,19 @@ namespace mould::internal {
         encoded = 0;
         break;
       case OpCode::Insert: {
-        const auto mask_index = (static_cast<unsigned char>(operation.insert_index) & 1) << 1;
-        const auto mask_format = (static_cast<unsigned char>(operation.insert_format) & 1) << 2;
-        encoded = (Codepoint) (1 | mask_index | mask_format);
+        const auto mask_format = (static_cast<unsigned char>(operation.insert_format) & 1) << 1;
+        encoded = (Codepoint) (1 | mask_format);
         } break;
-      case OpCode::Stop:
-        encoded = 0xFF;
-        break;
       }
     }
 
     constexpr OpCode opcode() const {
-      if(encoded == 0xFF) return OpCode::Stop;
       if((encoded & 0x1) == 0) return OpCode::Literal;
       else return OpCode::Insert;
     }
 
-    constexpr CodeValue insert_index() const {
-      if((encoded & 0x2) == 0) return CodeValue::Auto;
-      else return CodeValue::ReadCode;
-    }
-
     constexpr ImmediateValue insert_format() const {
-      if((encoded & 0x4) == 0) return ImmediateValue::Auto;
+      if((encoded & 0x1) == 0) return ImmediateValue::Auto;
       else return ImmediateValue::ReadImmediate;
     }
 
@@ -99,6 +89,7 @@ namespace mould::internal {
       encoded |= (static_cast<unsigned char>(format.padding) & Immediate{0x3}) << 8;
       encoded |= (static_cast<unsigned char>(format.alignment) & Immediate{0x3}) << 10;
       encoded |= (static_cast<unsigned char>(format.sign) & Immediate{0x3}) << 12;
+      encoded |= (static_cast<unsigned char>(format.index) & Immediate{0x3}) << 14;
     }
 
     constexpr FormatKind kind() {
@@ -122,7 +113,11 @@ namespace mould::internal {
     }
 
     constexpr Sign sign() {
-      return static_cast<Sign>((encoded >> 6) & 0x3);
+      return static_cast<Sign>((encoded >> 12) & 0x3);
+    }
+
+    constexpr InlineValue index() {
+      return static_cast<InlineValue>((encoded >> 14) & 0x3);
     }
 
     constexpr unsigned char inline_value(unsigned char index) {

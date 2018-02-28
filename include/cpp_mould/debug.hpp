@@ -34,13 +34,7 @@ namespace mould::internal {
         return false;
       }
       switch(opcode.opcode()) {
-      case OpCode::Stop:
-        return true;
       case OpCode::Insert:
-        if(opcode.insert_index() == CodeValue::ReadCode
-           && !(code >> index)) {
-          return false;
-        }
         if(opcode.insert_format() == ImmediateValue::ReadImmediate
            && !_read_insert_format(code, immediates)) {
           return false;
@@ -103,6 +97,15 @@ namespace mould::internal {
         padding = format.inline_value(inline_index++);
       case InlineValue::Auto:
         break;
+      }
+
+      switch(format.index()) {
+      case InlineValue::Inline:
+        index = format.inline_value(inline_index++);
+      case InlineValue::Auto:
+        break;
+      default:
+        *((char*)0); // Index value not valid
       }
 
       return true;
@@ -191,9 +194,6 @@ namespace mould::internal {
         description << ")";
         return description.str();
       }
-      case OpCode::Stop:
-        op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
-        return "Stop";
       default:
         op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
         return "!!!Unknown op code";
