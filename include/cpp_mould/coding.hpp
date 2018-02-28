@@ -47,7 +47,7 @@ namespace mould::internal {
     }
 
     constexpr ImmediateValue insert_format() const {
-      if((encoded & 0x1) == 0) return ImmediateValue::Auto;
+      if((encoded & 0x2) == 0) return ImmediateValue::Auto;
       else return ImmediateValue::ReadImmediate;
     }
 

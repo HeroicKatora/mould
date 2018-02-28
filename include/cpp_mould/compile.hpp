@@ -10,7 +10,8 @@
 namespace mould::internal {
   template<size_t N, typename CharT = const char>
   constexpr CompilationInput<CharT> format_buffer(CharT (&format_str)[N]) {
-    Buffer<CharT> buffer = { std::begin(format_str), std::end(format_str) - 1 };
+    std::string_view view { std::begin(format_str) };
+    Buffer<CharT> buffer = { view.begin(), view.end() };
     return { buffer, buffer };
   }
 
@@ -39,7 +40,7 @@ namespace mould::internal {
       count += format_spec.operation.codepoints();
     }
 
-    return N;
+    return count;
   }
 
   template<size_t N, typename CharT = const char>
@@ -82,7 +83,7 @@ namespace mould::internal {
   constexpr size_t ByteOpCount = bytecode_count(format_str);
 
   template<auto& format_str>
-  constexpr size_t ImmediateCount = bytecode_count(format_str);
+  constexpr size_t ImmediateCount = immediate_count(format_str);
 
   template<auto& format_str>
   using CharType = decltype(char_type(format_str));

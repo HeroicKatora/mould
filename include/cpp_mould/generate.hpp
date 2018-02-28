@@ -105,19 +105,19 @@ namespace mould::internal {
     StringLiteral<CharT>& literal)
   {
     auto& buffer = input.buffer;
-    const auto begin = buffer.begin;
+    const auto literal_begin = buffer.begin;
     while(buffer.begin < buffer.end && *buffer.begin != '{') buffer.begin++;
 
     OperationBuilder builder = {};
     builder.op = { OpCode::Literal };
     builder.literal = EncodedStringLiteral {
-      static_cast<Immediate>(begin - input.full_input.begin),
-      static_cast<Immediate>(buffer.begin - begin)
+      static_cast<Immediate>(literal_begin - input.full_input.begin),
+      static_cast<Immediate>(buffer.begin - literal_begin)
     };
 
     literal.operation = builder.Build();
 
-    return true;
+    return literal_begin < buffer.begin;
   }
 
   template<typename CharT>

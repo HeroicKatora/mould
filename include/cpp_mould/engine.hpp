@@ -117,7 +117,7 @@ namespace mould::internal {
 
     DebuggableOperation operation;
 
-    while(operation.read(byte_code, immediates)) {
+    while(operation.read(byte_code, immediates) == ReadStatus::NoError) {
       switch(operation.opcode.opcode()) {
       case OpCode::Literal:
         output.append(

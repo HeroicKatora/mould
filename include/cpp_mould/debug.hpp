@@ -16,6 +16,19 @@ namespace mould::internal {
     return { std::begin(buffer), std::end(buffer) };
   }
 
+  enum struct ReadStatus {
+    NoError,
+    MissingOpcode,
+    MissingFormatImmediate,
+    MissingLiteralImmediate,
+    MissingWidth,
+    MissingPrecision,
+    MissingPadding,
+    InvalidIndex,
+    InvalidOpcode,
+    InvalidFormatImmediate,
+  };
+
   // Holds an encoded operation and room for the maximum amount of additions.
   struct DebuggableOperation {
     EncodedOperation opcode;
@@ -29,44 +42,48 @@ namespace mould::internal {
     Immediate precision;
     Immediate padding;
 
-    constexpr bool read(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
+    constexpr ReadStatus read(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
       if(!(code >> opcode)) {
-        return false;
+        return ReadStatus::MissingOpcode;
       }
       switch(opcode.opcode()) {
       case OpCode::Insert:
-        if(opcode.insert_format() == ImmediateValue::ReadImmediate
-           && !_read_insert_format(code, immediates)) {
-          return false;
+        if(opcode.insert_format() == ImmediateValue::Auto)
+          return ReadStatus::NoError;
+        else if(opcode.insert_format() == ImmediateValue::ReadImmediate) {
+          return _read_insert_format(code, immediates);
         }
-        return true;
+        return ReadStatus::InvalidFormatImmediate;
       case OpCode::Literal:
         return _read_literal(code, immediates);
       default:
-        return false;
+        return ReadStatus::InvalidOpcode;
       }
     }
 
-    constexpr bool _read_literal(
+    constexpr ReadStatus _read_literal(
       ByteCodeBuffer& code,
       ImmediateBuffer& immediates)
     {
-      return (immediates >> literal);
+      if(!(immediates >> literal)) {
+        return ReadStatus::MissingLiteralImmediate;
+      }
+      return ReadStatus::NoError;
     }
 
-    constexpr bool _read_insert_format(
+    constexpr ReadStatus _read_insert_format(
       ByteCodeBuffer& code,
       ImmediateBuffer& immediates)
     {
       unsigned char inline_index = 0;
       if(!(immediates >> format)) {
-        return false;
+        return ReadStatus::MissingFormatImmediate;
       }
 
       switch(format.width()) {
       case InlineValue::Immediate:
         if(!(immediates >> width))
-          return false;
+          return ReadStatus::MissingWidth;
         break;
       case InlineValue::Inline: [[falltrough]]
       case InlineValue::Parameter:
@@ -78,7 +95,7 @@ namespace mould::internal {
       switch(format.precision()) {
       case InlineValue::Immediate:
         if(!(immediates >> precision))
-          return false;
+          return ReadStatus::MissingPrecision;
         break;
       case InlineValue::Inline: [[falltrough]]
       case InlineValue::Parameter:
@@ -90,7 +107,7 @@ namespace mould::internal {
       switch(format.padding()) {
       case InlineValue::Immediate:
         if(!(immediates >> padding))
-          return false;
+          return ReadStatus::MissingPadding;
         break;
       case InlineValue::Inline: [[falltrough]]
       case InlineValue::Parameter:
@@ -105,12 +122,27 @@ namespace mould::internal {
       case InlineValue::Auto:
         break;
       default:
-        *((char*)0); // Index value not valid
+        return ReadStatus::InvalidIndex;
       }
 
-      return true;
+      return ReadStatus::NoError;
     }
   };
+
+  constexpr const char* describe(ReadStatus status) {
+    switch(status) {
+    case ReadStatus::NoError: return "NoError";
+    case ReadStatus::MissingOpcode: return "MissingOpcode";
+    case ReadStatus::MissingFormatImmediate: return "MissingFormatImmediate";
+    case ReadStatus::MissingLiteralImmediate: return "MissingLiteralImmediate";
+    case ReadStatus::MissingWidth: return "MissingWidth";
+    case ReadStatus::MissingPrecision: return "MissingPrecision";
+    case ReadStatus::MissingPadding: return "MissingPadding";
+    case ReadStatus::InvalidIndex: return "InvalidIndex";
+    case ReadStatus::InvalidOpcode: return "InvalidOpcode";
+    case ReadStatus::InvalidFormatImmediate: return "InvalidFormatImmediate";
+    }
+  }
 
   constexpr const char* describe(ImmediateValue val) {
     if(val == ImmediateValue::Auto) return "Auto";
@@ -168,10 +200,13 @@ namespace mould::internal {
   ) {
     Immediate auto_index = 0;
     Immediate normal_index = 0;
+    ReadStatus status = ReadStatus::NoError;
 
     DebuggableOperation operation {};
 
-    while(operation.read(op_buffer, im_buffer)) {
+    while(!op_buffer.empty()) {
+      if((status = operation.read(op_buffer, im_buffer)) != ReadStatus::NoError)
+        return describe(status);
       switch(operation.opcode.opcode()) {
       case OpCode::Literal:
         return std::string("Literal: \"")
@@ -214,7 +249,7 @@ namespace mould::internal {
         { }
 
     constexpr bool empty() const {
-      return op_buffer.empty() || im_buffer.empty();
+      return op_buffer.empty();
     };
 
     constexpr operator bool() const {
