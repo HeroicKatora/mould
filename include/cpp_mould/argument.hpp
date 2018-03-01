@@ -60,14 +60,6 @@ namespace mould {
   NotImplemented format_pointer(const NotImplemented& value, Formatter formatter);
 
   NotImplemented format_string(const NotImplemented& value, Formatter formatter);
-
-  /* Standard implementation for const char* */
-  AutoFormat<AutoFormattingChoice::String> format_auto(const char*);
-
-  FormattingResult format_string(const char* value, Formatter formatter) {
-    formatter.append(value);
-    return FormattingResult::Success;
-  }
 }
 
 #endif

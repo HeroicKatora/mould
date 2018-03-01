@@ -1,7 +1,6 @@
 #ifndef CPP_MOULD_ARGUMENTS_INT_HPP
 #define CPP_MOULD_ARGUMENTS_INT_HPP
 #include <climits>
-#include <iostream>
 
 #include "../argument.hpp"
 
