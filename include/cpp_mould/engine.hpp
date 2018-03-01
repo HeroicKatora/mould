@@ -39,26 +39,33 @@ namespace mould::internal {
     TypeErasedArgument* end;
   };
 
+  template<typename Ignore, typename Then>
+  struct Validate { using type = Then; };
+  template<typename Then>
+  struct Validate<NotImplemented, Then>;
+
+  template<typename T>
+  inline auto uniq_decimal_formatter(const T& val, Formatter formatter)
+  -> typename Validate<decltype(::mould::format_decimal(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
+    return ::mould::format_decimal(val, formatter);
+  }
+
+  template<typename T>
+  inline auto uniq_string_formatter(const T& val, Formatter formatter)
+  -> typename Validate<decltype(::mould::format_string(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
+    return ::mould::format_string(val, formatter);
+  }
+
   template<typename T>
   constexpr auto decimal_formatter(int)
-  -> decltype(::mould::format_decimal(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    using ImplementationCanary = decltype(::mould::format_decimal(std::declval<const T&>(), std::declval<Formatter>()));
-    if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
-      return nullptr;
-    } else {
-      return ::mould::format_decimal;
-    }
+  -> decltype(uniq_decimal_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
+    return uniq_decimal_formatter<T>;
   }
 
   template<typename T>
   constexpr auto string_formatter(int)
-  -> decltype(::mould::format_string(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    using ImplementationCanary = decltype(::mould::format_string(std::declval<const T&>(), std::declval<Formatter>()));
-    if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
-      return nullptr;
-    } else {
-      return ::mould::format_string;
-    }
+  -> decltype(uniq_string_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
+    return uniq_string_formatter<T>;
   }
 
   template<typename T>
@@ -83,20 +90,50 @@ namespace mould::internal {
     }
   }
 
+  template<typename T>
+  struct TypedFormatter {
+    using formatting_function = FormattingResult (*)(const T&, Formatter);
+    constexpr static formatting_function automatic = auto_formatter<T>();
+    constexpr static formatting_function decimal = decimal_formatter<T>(0);
+    constexpr static formatting_function string = string_formatter<T>(0);
+  };
+
   using type_erase_formatting_function = FormattingResult (*)(const void*, Formatter);
 
-  template<typename T, FormattingResult (*fn)(const T&, Formatter)>
-  FormattingResult type_erase_function(const void* self, Formatter formatter) {
-    return fn(*reinterpret_cast<const T*>(self), formatter);
-  }
+  template<typename T>
+  struct type_erase_function {
+    static FormattingResult format_auto(const void* self, Formatter formatter) {
+      if constexpr(TypedFormatter<T>::automatic == nullptr) {
+        return FormattingResult::Success;
+      } else {
+        return TypedFormatter<T>::automatic(*reinterpret_cast<const T*>(self), formatter);
+      }
+    }
+
+    static FormattingResult format_decimal(const void* self, Formatter formatter) {
+      if constexpr(TypedFormatter<T>::decimal == nullptr) {
+        return FormattingResult::Success;
+      } else {
+        return TypedFormatter<T>::decimal(*reinterpret_cast<const T*>(self), formatter);
+      }
+    }
+
+    static FormattingResult format_string(const void* self, Formatter formatter) {
+      if constexpr(TypedFormatter<T>::string == nullptr) {
+        return FormattingResult::Success;
+      } else {
+        return TypedFormatter<T>::string(*reinterpret_cast<const T*>(self), formatter);
+      }
+    }
+  };
 
   struct TypeErasedFormatter {
     template<typename T>
     constexpr static TypeErasedFormatter Construct() {
       return TypeErasedFormatter {
-        type_erase_function<T, auto_formatter<T>()>,
-        type_erase_function<T, decimal_formatter<T>(0)>,
-        type_erase_function<T, string_formatter<T>(0)>,
+        type_erase_function<T>::format_auto,
+        type_erase_function<T>::format_decimal,
+        type_erase_function<T>::format_string,
       };
     }
 
