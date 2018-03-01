@@ -37,41 +37,29 @@ namespace mould {
   struct AutoFormat { static constexpr AutoFormattingChoice value = choice; };
 
   // The argument here is always nullptr and only used for deciding the callee.
-  template<typename T>
-  AutoFormat<AutoFormattingChoice::NoAuto> format_auto(const T&);
+  AutoFormat<AutoFormattingChoice::NoAuto> format_auto(const NotImplemented&);
 
-  template<typename T>
-  NotImplemented format_decimal(const T& value, Formatter formatter);
+  NotImplemented format_decimal(const NotImplemented& value, Formatter formatter);
 
-  template<typename T>
-  NotImplemented format_binary(const T& value, Formatter formatter);
+  NotImplemented format_binary(const NotImplemented& value, Formatter formatter);
 
-  template<typename T>
-  NotImplemented format_octal(const T& value, Formatter formatter);
+  NotImplemented format_octal(const NotImplemented& value, Formatter formatter);
 
-  template<typename T>
-  NotImplemented format_hex(const T& value, Formatter formatter);
+  NotImplemented format_hex(const NotImplemented& value, Formatter formatter);
 
-  template<typename T>
-  NotImplemented format_HEX(const T& value, Formatter formatter);
+  NotImplemented format_HEX(const NotImplemented& value, Formatter formatter);
 
-  template<typename T>
-  NotImplemented format_exponent(const T& value, Formatter formatter);
+  NotImplemented format_exponent(const NotImplemented& value, Formatter formatter);
 
-  template<typename T>
-  NotImplemented format_EXPONENT(const T& value, Formatter formatter);
+  NotImplemented format_EXPONENT(const NotImplemented& value, Formatter formatter);
 
-  template<typename T>
-  NotImplemented format_fpoint(const T& value, Formatter formatter);
+  NotImplemented format_fpoint(const NotImplemented& value, Formatter formatter);
 
-  template<typename T>
-  NotImplemented format_FPOINT(const T& value, Formatter formatter);
+  NotImplemented format_FPOINT(const NotImplemented& value, Formatter formatter);
 
-  template<typename T>
-  NotImplemented format_pointer(const T& value, Formatter formatter);
+  NotImplemented format_pointer(const NotImplemented& value, Formatter formatter);
 
-  template<typename T>
-  NotImplemented format_string(const T& value, Formatter formatter);
+  NotImplemented format_string(const NotImplemented& value, Formatter formatter);
 
   /* Standard implementation for const char* */
   AutoFormat<AutoFormattingChoice::String> format_auto(const char*);

@@ -39,32 +39,72 @@ namespace mould::internal {
     TypeErasedArgument* end;
   };
 
-
-  using formatting_function = FormattingResult (*)(const void*, Formatter);
+  template<typename T>
+  constexpr auto decimal_formatter(int)
+  -> decltype(::mould::format_decimal(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
+    using ImplementationCanary = decltype(::mould::format_decimal(std::declval<const T&>(), std::declval<Formatter>()));
+    if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
+      return nullptr;
+    } else {
+      return ::mould::format_decimal;
+    }
+  }
 
   template<typename T>
-  constexpr formatting_function auto_formatter();
-  template<typename T>
-  constexpr formatting_function decimal_formatter();
-  template<typename T>
-  constexpr formatting_function string_formatter();
+  constexpr auto string_formatter(int)
+  -> decltype(::mould::format_string(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
+    using ImplementationCanary = decltype(::mould::format_string(std::declval<const T&>(), std::declval<Formatter>()));
+    if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
+      return nullptr;
+    } else {
+      return ::mould::format_string;
+    }
+  }
 
+  template<typename T>
+  constexpr auto decimal_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
+    return nullptr;
+  }
+
+  template<typename T>
+  constexpr auto string_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
+    return nullptr;
+  }
+
+  template<typename T>
+  constexpr auto auto_formatter() {
+    constexpr auto selection = decltype(format_auto(std::declval<const T&>()))::value;
+    if constexpr(selection == AutoFormattingChoice::Decimal) {
+      return decimal_formatter<T>(0);
+    } else if constexpr(selection == AutoFormattingChoice::String) {
+      return string_formatter<T>(0);
+    } else {
+      return nullptr;
+    }
+  }
+
+  using type_erase_formatting_function = FormattingResult (*)(const void*, Formatter);
+
+  template<typename T, FormattingResult (*fn)(const T&, Formatter)>
+  FormattingResult type_erase_function(const void* self, Formatter formatter) {
+    return fn(*reinterpret_cast<const T*>(self), formatter);
+  }
 
   struct TypeErasedFormatter {
     template<typename T>
     constexpr static TypeErasedFormatter Construct() {
       return TypeErasedFormatter {
-        auto_formatter<T>(),
-        decimal_formatter<T>(),
-        string_formatter<T>(),
+        type_erase_function<T, auto_formatter<T>()>,
+        type_erase_function<T, decimal_formatter<T>(0)>,
+        type_erase_function<T, string_formatter<T>(0)>,
       };
     }
 
-    formatting_function automatic;
-    formatting_function decimal;
-    formatting_function string;
+    type_erase_formatting_function automatic;
+    type_erase_formatting_function decimal;
+    type_erase_formatting_function string;
 
-    constexpr formatting_function formatter_for(FormatKind kind) const {
+    constexpr type_erase_formatting_function formatter_for(FormatKind kind) const {
       switch(kind) {
       case FormatKind::Auto: return automatic;
       case FormatKind::Decimal: return decimal;
@@ -88,7 +128,7 @@ namespace mould::internal {
     const void*         argument;
     const Immediate     as_value;
 
-    formatting_function formatter_for(FormatKind kind) const {
+    type_erase_formatting_function formatter_for(FormatKind kind) const {
       return formatter.formatter_for(kind);
     }
   };
@@ -159,50 +199,6 @@ namespace mould::internal {
       }
     }
     return std::move(output);
-  }
-
-  template<typename T>
-  inline static FormattingResult _decimal_formatter(const void* value, Formatter formatter) {
-    return ::mould::format_decimal(*reinterpret_cast<const T*>(value), formatter);
-  }
-
-  template<typename T>
-  inline static FormattingResult _string_formatter(const void* value, Formatter formatter) {
-    return ::mould::format_string(*reinterpret_cast<const T*>(value), formatter);
-  }
-
-  template<typename T>
-  constexpr formatting_function auto_formatter() {
-    constexpr auto selection = decltype(format_auto(std::declval<const T&>()))::value;
-    if constexpr(selection == AutoFormattingChoice::Decimal) {
-      return _decimal_formatter<T>;
-    } else if constexpr(selection == AutoFormattingChoice::String) {
-      return _string_formatter<T>;
-    } else {
-      return nullptr;
-    }
-  }
-
-  template<typename T>
-  constexpr formatting_function decimal_formatter() {
-    using ImplementationCanary =
-      decltype(::mould::format_decimal(std::declval<const T&>(), std::declval<Formatter>()));
-    if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
-      return nullptr;
-    } else {
-      return _decimal_formatter<T>;
-    }
-  }
-
-  template<typename T>
-  constexpr formatting_function string_formatter() {
-    using ImplementationCanary =
-      decltype(::mould::format_string(std::declval<const T&>(), std::declval<Formatter>()));
-    if constexpr(std::is_same<NotImplemented, ImplementationCanary>::value) {
-      return nullptr;
-    } else {
-      return _string_formatter<T>;
-    }
   }
 
   template<typename T>
