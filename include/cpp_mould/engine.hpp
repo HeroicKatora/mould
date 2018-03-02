@@ -8,6 +8,19 @@
 namespace mould::internal {
   struct TypeErasedArgument;
 
+  enum struct EngineResultType {
+    Ok,
+    UnsupportedFormatting, // A deferred formatting was not found
+    FormattingError, // Some formatting was unsuccessful
+  };
+
+  struct EngineResult {
+    EngineResultType type;
+
+    // The formatting kind that caused the error, applicable to UnsupportedFormatting
+    FormatKind cause_kind;
+  };
+
   // A formatter into some output.
   class Engine {
     using ByteCodeInterface = internal::TypeErasedByteCode<char>;
@@ -19,22 +32,25 @@ namespace mould::internal {
     Engine(
         const ByteCodeInterface& code,
         TypeErasedArgument* begin,
-        TypeErasedArgument* end)
+        TypeErasedArgument* end,
+        // Let's see how much we can do with this and what behaviour we can abstract
+        std::string& outbuffer)
       : format_string(code.format_buffer()),
         byte_code(code.code_buffer()),
         immediates(code.immediate_buffer()),
-        begin(begin), end(end)
+        begin(begin), end(end),
+        output(outbuffer)
         { }
 
     friend class ::mould::Formatter;
 
-    std::string execute();
+    EngineResult execute();
   private:
     Buffer<const char> format_string;
     ByteCodeBuffer  byte_code;
     ImmediateBuffer immediates;
 
-    std::string output;
+    std::string& output;
     TypeErasedArgument* begin;
     TypeErasedArgument* end;
   };
@@ -60,6 +76,8 @@ namespace mould::internal {
   };
 }
 
+#include "debug.hpp" // Cheat for the moment, lets take some slow stuff.
+
 namespace mould {
   template<typename ... Arguments>
   std::string format(
@@ -67,17 +85,25 @@ namespace mould {
     Arguments&&... arguments)
   {
     using namespace internal;
+    std::string output;
     TypeErasedArgument untyped_args [sizeof...(Arguments)]
       = {TypeErasedArgument{arguments}...};
-    Engine engine {buffer, untyped_args, untyped_args +  sizeof...(Arguments) };
-    return engine.execute();
+    Engine engine {buffer, untyped_args, untyped_args +  sizeof...(Arguments), output };
+    const auto result = engine.execute();
+    switch(result.type) {
+    case EngineResultType::Ok:
+      return output;
+    case EngineResultType::UnsupportedFormatting:
+      return std::string("Formatting not supported: ") + describe(result.cause_kind);
+    case EngineResultType::FormattingError:
+      return std::string("Error while formatting");
+    }
+    return output;
   }
 }
 
-#include "debug.hpp" // Cheat for the moment, lets take some slow stuff.
-
 namespace mould::internal {
-  std::string Engine::execute() {
+  EngineResult Engine::execute() {
     unsigned auto_index = 0;
 
     DebuggableOperation operation = {};
@@ -107,7 +133,10 @@ namespace mould::internal {
 
           // FIXME: we can determine at compile time which functions are needed!
           if(!formatting_fn)
-            return std::string("Formatting not supported: ") + describe(description.kind);
+            return EngineResult {
+              EngineResultType::UnsupportedFormatting,
+              description.kind
+            };
 
           auto format = Format {
             formatting.width,
@@ -120,11 +149,18 @@ namespace mould::internal {
           Formatter formatter {*this, format};
           auto result = formatting_fn(argument.argument, formatter);
           if(result == FormattingResult::Error)
-            return std::string("Error while formatting");
+            return EngineResult {
+              EngineResultType::FormattingError,
+              description.kind
+            };
         } break;
       }
     }
-    return std::move(output);
+
+    return EngineResult {
+      EngineResultType::Ok,
+      FormatKind::Auto,
+    };
   }
 
   template<typename T>
