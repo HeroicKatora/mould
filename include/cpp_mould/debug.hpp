@@ -112,35 +112,37 @@ namespace mould::internal {
 
     DebuggableOperation operation {};
 
-    while(!op_buffer.empty()) {
-      if((status = operation.read(op_buffer, im_buffer)) != ReadStatus::NoError)
-        return describe(status);
-      switch(operation.opcode.opcode()) {
-      case OpCode::Literal:
-        return std::string("Literal: \"")
-               + std::string(
-                  operation.literal.offset + format_string.begin,
-                  operation.literal.length)
-               + "\"";
-      case OpCode::Insert: {
-        std::stringstream description(std::string{});
-        description << "Insert: format (" << describe(operation.opcode.insert_format());
-        description << ") kind (" << describe(operation.formatting.format.kind);
-        description << ") width (" << describe(operation.formatting.format.width)
-                    << ", " << operation.formatting.width;
-        description << ") precision (" << describe(operation.formatting.format.precision)
-                    << ", " << operation.formatting.precision;
-        description << ") padding (" << describe(operation.formatting.format.padding)
-                    << ", " << operation.formatting.padding;
-        description << ") alignment (" << describe(operation.formatting.format.alignment);
-        description << ") sign (" << describe(operation.formatting.format.sign);
-        description << ")";
-        return description.str();
-      }
-      default:
-        op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
-        return "!!!Unknown op code";
-      }
+    if(op_buffer.empty())
+      return "!!!Trying to describe an empty buffer";
+
+    if((status = operation.read(op_buffer, im_buffer)) != ReadStatus::NoError)
+      return describe(status);
+
+    switch(operation.opcode.opcode()) {
+    case OpCode::Literal:
+      return std::string("Literal: \"")
+             + std::string(
+                operation.literal.offset + format_string.begin,
+                operation.literal.length)
+             + "\"";
+    case OpCode::Insert: {
+      std::stringstream description(std::string{});
+      description << "Insert: format (" << describe(operation.opcode.insert_format());
+      description << ") kind (" << describe(operation.formatting.format.kind);
+      description << ") width (" << describe(operation.formatting.format.width)
+                  << ", " << operation.formatting.width;
+      description << ") precision (" << describe(operation.formatting.format.precision)
+                  << ", " << operation.formatting.precision;
+      description << ") padding (" << describe(operation.formatting.format.padding)
+                  << ", " << operation.formatting.padding;
+      description << ") alignment (" << describe(operation.formatting.format.alignment);
+      description << ") sign (" << describe(operation.formatting.format.sign);
+      description << ")";
+      return description.str();
+    }
+    default:
+      op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
+      return "!!!Unknown op code";
     }
   }
 

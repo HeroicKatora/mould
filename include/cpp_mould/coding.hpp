@@ -258,7 +258,7 @@ namespace mould::internal {
         if(!(immediates >> decoded.width))
           return ReadStatus::MissingWidth;
         break;
-      case InlineValue::Inline: [[falltrough]]
+      case InlineValue::Inline: [[fallthrough]];
       case InlineValue::Parameter:
         decoded.width = format.inline_value(inline_index++);
       case InlineValue::Auto:
@@ -270,7 +270,7 @@ namespace mould::internal {
         if(!(immediates >> decoded.precision))
           return ReadStatus::MissingPrecision;
         break;
-      case InlineValue::Inline: [[falltrough]]
+      case InlineValue::Inline: [[fallthrough]];
       case InlineValue::Parameter:
         decoded.precision = format.inline_value(inline_index++);
       case InlineValue::Auto:
@@ -282,7 +282,7 @@ namespace mould::internal {
         if(!(immediates >> decoded.padding))
           return ReadStatus::MissingPadding;
         break;
-      case InlineValue::Inline: [[falltrough]]
+      case InlineValue::Inline: [[fallthrough]];
       case InlineValue::Parameter:
         decoded.padding = format.inline_value(inline_index++);
       case InlineValue::Auto:
