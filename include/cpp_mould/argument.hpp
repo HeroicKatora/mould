@@ -19,18 +19,19 @@ namespace mould {
   };
 
   enum struct AutoFormattingChoice {
-    NoAuto,
-    Decimal,
-    Binary,
-    Octal,
-    Hex,
+    NO_AUTO,
+
+    decimal,
+    binary,
+    octal,
+    hex,
     HEX,
-    Exponent,
+    exponent,
     EXPONENT,
-    Fpoint,
+    fpoint,
     FPOINT,
-    Pointer,
-    String,
+    pointer,
+    string,
   };
 
   template<AutoFormattingChoice choice>

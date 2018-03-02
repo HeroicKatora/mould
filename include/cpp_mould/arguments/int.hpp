@@ -7,8 +7,8 @@
 namespace mould {
   /* Standard definition for int */
   template<typename Choice>
-  constexpr AutoFormatting<AutoFormattingChoice::Decimal> format_auto(const int&, const Choice& choice) {
-    return AutoFormatting<AutoFormattingChoice::Decimal> { };
+  constexpr AutoFormatting<AutoFormattingChoice::decimal> format_auto(const int&, const Choice& choice) {
+    return AutoFormatting<AutoFormattingChoice::decimal> { };
   }
 
   template<typename Formatter>

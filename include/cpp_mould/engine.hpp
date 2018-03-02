@@ -54,7 +54,7 @@ namespace mould::internal {
     const void*         argument;
     const Immediate     as_value;
 
-    type_erase_formatting_function formatter_for(FormatKind kind) const {
+    type_erased_formatting_function formatter_for(FormatKind kind) const {
       return formatter.formatter_for(kind);
     }
   };

@@ -66,17 +66,11 @@ namespace mould::internal {
   constexpr const char* describe(FormatKind kind) {
     switch(kind) {
     case FormatKind::Auto: return "Auto";
-    case FormatKind::Decimal: return "Decimal";
-    case FormatKind::Binary: return "Binary";
-    case FormatKind::Octal: return "Octal";
-    case FormatKind::Hex: return "Hex";
-    case FormatKind::HEX: return "HEX";
-    case FormatKind::Exponent: return "Exponent";
-    case FormatKind::EXPONENT: return "EXPONENT";
-    case FormatKind::FPoint: return "Floating Point";
-    case FormatKind::FPOINT: return "FLOATING POINT";
-    case FormatKind::Pointer: return "Pointer";
-    case FormatKind::String: return "String";
+#define CPP_MOULD_DESCRIBE_FORMAT_KIND(kind)\
+    case FormatKind:: kind: return  #kind;
+
+    CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DESCRIBE_FORMAT_KIND)
+#undef CPP_MOULD_DESCRIBE_FORMAT_KIND
     }
   }
 

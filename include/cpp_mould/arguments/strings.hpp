@@ -5,8 +5,8 @@
 namespace mould {
   /* Standard implementation for const char* */
   template<typename Choice>
-  constexpr AutoFormatting<AutoFormattingChoice::String> format_auto(const char*, Choice choice) {
-    return AutoFormatting<AutoFormattingChoice::String> { };
+  constexpr AutoFormatting<AutoFormattingChoice::string> format_auto(const char*, Choice choice) {
+    return AutoFormatting<AutoFormattingChoice::string> { };
   }
 
   template<typename Formatter>

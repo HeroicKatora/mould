@@ -31,44 +31,26 @@ namespace mould::internal {
     return nullptr; \
   } \
 
-CPP_MOULD_DELAYED_FORMATTER(decimal)
-CPP_MOULD_DELAYED_FORMATTER(binary)
-CPP_MOULD_DELAYED_FORMATTER(octal)
-CPP_MOULD_DELAYED_FORMATTER(hex)
-CPP_MOULD_DELAYED_FORMATTER(HEX)
-CPP_MOULD_DELAYED_FORMATTER(exponent)
-CPP_MOULD_DELAYED_FORMATTER(EXPONENT)
-CPP_MOULD_DELAYED_FORMATTER(fpoint)
-CPP_MOULD_DELAYED_FORMATTER(FPOINT)
-CPP_MOULD_DELAYED_FORMATTER(pointer)
-CPP_MOULD_DELAYED_FORMATTER(string)
-
+CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
 #undef CPP_MOULD_DELAYED_FORMATTER
 
   struct Choice { };
 
   template<typename T>
-  inline auto uniq_auto_formatter(const T& val, Choice choice)
+  inline auto uniq_automatic_formatter(const T& val, Choice choice)
   -> decltype(format_auto(std::declval<const T&>(), std::declval<Formatter>())) {
     return decltype(format_auto(val, choice)){ };
   }
 
   template<typename T>
-  constexpr auto auto_formatter(int)
-  -> typename Validate<decltype(uniq_auto_formatter(std::declval<const T&>(), std::declval<Choice>())), FormattingResult>::type (*)(const T&, Formatter) {
-    using ChoiceT = decltype(uniq_auto_formatter(std::declval<const T&>(), std::declval<Choice>()));
-#define CPP_MOULD_AUTO_CHOICE(Kind, kind) if constexpr(ChoiceT::value == AutoFormattingChoice:: Kind) { return kind##_formatter<T>(0); } else
-    CPP_MOULD_AUTO_CHOICE(Decimal, decimal)
-    CPP_MOULD_AUTO_CHOICE(Binary, binary)
-    CPP_MOULD_AUTO_CHOICE(Octal, octal)
-    CPP_MOULD_AUTO_CHOICE(Hex, hex)
-    CPP_MOULD_AUTO_CHOICE(HEX, HEX)
-    CPP_MOULD_AUTO_CHOICE(Exponent, exponent)
-    CPP_MOULD_AUTO_CHOICE(EXPONENT, EXPONENT)
-    CPP_MOULD_AUTO_CHOICE(Fpoint, fpoint)
-    CPP_MOULD_AUTO_CHOICE(FPOINT, FPOINT)
-    CPP_MOULD_AUTO_CHOICE(Pointer, pointer)
-    CPP_MOULD_AUTO_CHOICE(String, string)
+  constexpr auto automatic_formatter(int)
+  -> typename Validate<decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>())), FormattingResult>::type (*)(const T&, Formatter) {
+    using ChoiceT = decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>()));
+
+#define CPP_MOULD_AUTO_CHOICE(kind)\
+    if constexpr(ChoiceT::value == AutoFormattingChoice:: kind) { return kind##_formatter<T>(0); } else
+
+    CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_AUTO_CHOICE)
 #undef CPP_MOULD_AUTO_CHOICE
     /* else */ {
     	return nullptr;
@@ -76,28 +58,21 @@ CPP_MOULD_DELAYED_FORMATTER(string)
   }
 
   template<typename T>
-  constexpr auto auto_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
+  constexpr auto automatic_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
     return nullptr;
   }
 
   template<typename T>
   struct TypedFormatter {
     using formatting_function = FormattingResult (*)(const T&, Formatter);
-    constexpr static formatting_function automatic = auto_formatter<T>(0);
-    constexpr static formatting_function decimal = decimal_formatter<T>(0);
-    constexpr static formatting_function binary = binary_formatter<T>(0);
-    constexpr static formatting_function octal = octal_formatter<T>(0);
-    constexpr static formatting_function hex = hex_formatter<T>(0);
-    constexpr static formatting_function HEX = HEX_formatter<T>(0);
-    constexpr static formatting_function exponent = exponent_formatter<T>(0);
-    constexpr static formatting_function EXPONENT = EXPONENT_formatter<T>(0);
-    constexpr static formatting_function fpoint = fpoint_formatter<T>(0);
-    constexpr static formatting_function FPOINT = FPOINT_formatter<T>(0);
-    constexpr static formatting_function pointer = pointer_formatter<T>(0);
-    constexpr static formatting_function string = string_formatter<T>(0);
+#define CPP_MOULD_TYPED_CONSTEXPR(kind)\
+    constexpr static formatting_function kind = kind##_formatter<T>(0);
+
+    CPP_MOULD_TYPED_CONSTEXPR(automatic)
+    CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPED_CONSTEXPR)
+#undef CPP_MOULD_TYPED_CONSTEXPR
   };
 
-  using type_erase_formatting_function = FormattingResult (*)(const void*, Formatter);
 
   template<typename T>
   struct type_erase_function {
@@ -111,39 +86,42 @@ CPP_MOULD_DELAYED_FORMATTER(string)
     }
 
     CPP_MOULD_TYPE_ERASED_FORMAT(automatic)
-    CPP_MOULD_TYPE_ERASED_FORMAT(decimal)
-    CPP_MOULD_TYPE_ERASED_FORMAT(binary)
-    CPP_MOULD_TYPE_ERASED_FORMAT(octal)
-    CPP_MOULD_TYPE_ERASED_FORMAT(hex)
-    CPP_MOULD_TYPE_ERASED_FORMAT(HEX)
-    CPP_MOULD_TYPE_ERASED_FORMAT(exponent)
-    CPP_MOULD_TYPE_ERASED_FORMAT(EXPONENT)
-    CPP_MOULD_TYPE_ERASED_FORMAT(fpoint)
-    CPP_MOULD_TYPE_ERASED_FORMAT(FPOINT)
-    CPP_MOULD_TYPE_ERASED_FORMAT(pointer)
-    CPP_MOULD_TYPE_ERASED_FORMAT(string)
+    CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPE_ERASED_FORMAT)
 #undef CPP_MOULD_TYPE_ERASED_FORMAT
   };
 
+  using type_erased_formatting_function = FormattingResult (*)(const void*, Formatter);
+
   struct TypeErasedFormatter {
+
+#   define CPP_MOULD_TYPE_ERASED_FORMATTER_MEMBER(kind)\
+    type_erased_formatting_function kind;
+
+      CPP_MOULD_TYPE_ERASED_FORMATTER_MEMBER(automatic)
+      CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPE_ERASED_FORMATTER_MEMBER)
+#   undef CPP_MOULD_TYPE_ERASED_FORMATTER_MEMBER
+
     template<typename T>
     constexpr static TypeErasedFormatter Construct() {
+
       return TypeErasedFormatter {
-        type_erase_function<T>::format_automatic,
-        type_erase_function<T>::format_decimal,
-        type_erase_function<T>::format_string,
+        #define CPP_MOULD_TYPE_ERASED_FORMATTER_INIT(kind)\
+        type_erase_function<T>::format_##kind,
+
+        CPP_MOULD_TYPE_ERASED_FORMATTER_INIT(automatic)
+        CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPE_ERASED_FORMATTER_INIT)
+        #undef CPP_MOULD_TYPE_ERASED_FORMATTER_INIT
       };
     }
 
-    type_erase_formatting_function automatic;
-    type_erase_formatting_function decimal;
-    type_erase_formatting_function string;
-
-    constexpr type_erase_formatting_function formatter_for(FormatKind kind) const {
+    constexpr type_erased_formatting_function formatter_for(FormatKind kind) const {
       switch(kind) {
       case FormatKind::Auto: return automatic;
-      case FormatKind::Decimal: return decimal;
-      case FormatKind::String: return string;
+#     define CPP_MOULD_TYPE_ERASED_FORMATTER_SWITCH_CASE(kind)\
+      case FormatKind:: kind : return kind;
+
+      CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPE_ERASED_FORMATTER_SWITCH_CASE)
+#     undef CPP_MOULD_TYPE_ERASED_FORMATTER_SWITCH_CASE
       }
     }
   };
