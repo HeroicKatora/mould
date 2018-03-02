@@ -6,8 +6,12 @@
 
 namespace mould {
   /* Standard definition for int */
-  AutoFormat<AutoFormattingChoice::Decimal> format_auto(const int&);
+  template<typename Choice>
+  constexpr AutoFormatting<AutoFormattingChoice::Decimal> format_auto(const int&, const Choice& choice) {
+    return AutoFormatting<AutoFormattingChoice::Decimal> { };
+  }
 
+  template<typename Formatter>
   FormattingResult format_decimal(const int& pvalue, Formatter formatter) {
     if(pvalue == 0) {
       formatter.append("0");

@@ -45,12 +45,21 @@ namespace mould::internal {
     return nullptr;
   }
 
+  struct Choice { };
+
   template<typename T>
-  constexpr auto auto_formatter() {
-    constexpr auto selection = decltype(format_auto(std::declval<const T&>()))::value;
-    if constexpr(selection == AutoFormattingChoice::Decimal) {
+  inline auto uniq_auto_formatter(const T& val, Choice choice)
+  -> decltype(format_auto(std::declval<const T&>(), std::declval<Formatter>())) {
+    return decltype(format_auto(val, choice)){ };
+  }
+
+  template<typename T>
+  constexpr auto auto_formatter(int)
+  -> typename Validate<decltype(uniq_auto_formatter(std::declval<const T&>(), std::declval<Choice>())), FormattingResult>::type (*)(const T&, Formatter) {
+    using ChoiceT = decltype(uniq_auto_formatter(std::declval<const T&>(), std::declval<Choice>()));
+    if constexpr(ChoiceT::value == AutoFormattingChoice::Decimal) {
       return decimal_formatter<T>(0);
-    } else if constexpr(selection == AutoFormattingChoice::String) {
+    } else if constexpr(ChoiceT::value == AutoFormattingChoice::String) {
       return string_formatter<T>(0);
     } else {
       return nullptr;
@@ -58,11 +67,18 @@ namespace mould::internal {
   }
 
   template<typename T>
+  constexpr auto auto_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
+    return nullptr;
+  }
+
+  template<typename T>
   struct TypedFormatter {
     using formatting_function = FormattingResult (*)(const T&, Formatter);
-    constexpr static formatting_function automatic = auto_formatter<T>();
+    constexpr static formatting_function automatic = auto_formatter<T>(0);
     constexpr static formatting_function decimal = decimal_formatter<T>(0);
     constexpr static formatting_function string = string_formatter<T>(0);
+
+    static_assert(decimal != nullptr || string != nullptr);
   };
 
   using type_erase_formatting_function = FormattingResult (*)(const void*, Formatter);
@@ -70,10 +86,10 @@ namespace mould::internal {
   template<typename T>
   struct type_erase_function {
     static FormattingResult format_auto(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::automatic == nullptr) {
-        return FormattingResult::Success;
-      } else {
+      if constexpr(TypedFormatter<T>::automatic != nullptr) {
         return TypedFormatter<T>::automatic(*reinterpret_cast<const T*>(self), formatter);
+      } else {
+        return FormattingResult::Error;
       }
     }
 

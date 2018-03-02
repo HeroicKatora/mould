@@ -34,11 +34,15 @@ namespace mould {
   };
 
   template<AutoFormattingChoice choice>
-  struct AutoFormat { static constexpr AutoFormattingChoice value = choice; };
+  struct AutoFormatting {
+    constexpr static AutoFormattingChoice value = choice;
+  };
 
   // The argument here is always nullptr and only used for deciding the callee.
-  AutoFormat<AutoFormattingChoice::NoAuto> format_auto(const NotImplemented&);
+  template<typename Choice>
+  NotImplemented format_auto(const NotImplemented&, Choice choice);
 
+  template<typename Formatter>
   NotImplemented format_decimal(const NotImplemented& value, Formatter formatter);
 
   NotImplemented format_binary(const NotImplemented& value, Formatter formatter);
@@ -59,6 +63,7 @@ namespace mould {
 
   NotImplemented format_pointer(const NotImplemented& value, Formatter formatter);
 
+  template<typename Formatter>
   NotImplemented format_string(const NotImplemented& value, Formatter formatter);
 }
 
