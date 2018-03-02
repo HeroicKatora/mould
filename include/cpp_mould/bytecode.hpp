@@ -38,6 +38,7 @@ namespace mould::internal {
 
 #define CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(WHAT) \
     WHAT(decimal)\
+    WHAT(character)\
     WHAT(binary)\
     WHAT(octal)\
     WHAT(hex)\
@@ -52,18 +53,19 @@ namespace mould::internal {
   enum struct FormatKind: unsigned char {
     Auto     = 0, /* The kind is automatically chosen by the parameter */
 
-    decimal  = 1,
-    binary   = 2,
-    octal    = 3,
-    hex      = 4,
-    HEX      = 5,
-    exponent = 6,
-    EXPONENT = 7,
-    fpoint   = 8,
-    FPOINT   = 9,
-    pointer  = 10,
+    decimal   = 1,
+    binary    = 2,
+    octal     = 3,
+    hex       = 4,
+    HEX       = 5,
+    exponent  = 6,
+    EXPONENT  = 7,
+    fpoint    = 8,
+    FPOINT    = 9,
+    pointer   = 10,
 
-    string   = 11,
+    string    = 11,
+    character = 12,
   };
 
   enum struct InlineValue: unsigned char {

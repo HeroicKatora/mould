@@ -82,6 +82,31 @@ namespace mould::internal {
   };
 
   template<typename CharT>
+  constexpr FormatKind get_format_kind(Buffer<CharT> inner_format) {
+    switch(inner_format.end[-1]) {
+    case 'b': return FormatKind::binary;
+    case 'c': return FormatKind::character;
+    case 'd': return FormatKind::decimal;
+    case 'e': return FormatKind::exponent;
+    case 'E': return FormatKind::EXPONENT;
+    case 'f': return FormatKind::fpoint;
+    case 'F': return FormatKind::FPOINT;
+    // case 'g': return FormatKind:: | "G" | "n" |
+    // Note: gGn are all similar to fpoint/decimal so I neglect them for now
+    // Also, they do not appear in C and all formats should not be affected
+    // by locale by design. Maybe this will get revisited later.
+    case 'o': return FormatKind::octal;
+    case 's': return FormatKind::string;
+    case 'p': return FormatKind::pointer;
+    case 'x': return FormatKind::hex;
+    case 'X': return FormatKind::HEX;
+    // | "%" // FIXME: support percentage
+    default:
+      return FormatKind::Auto;
+    }
+  }
+
+  template<typename CharT>
   constexpr bool get_string_literal(
     CompilationInput<CharT>& input,
     StringLiteral<CharT>& literal)
@@ -124,6 +149,16 @@ namespace mould::internal {
 
     OperationBuilder builder = {};
     builder.op = Operation::Insert(ImmediateValue::Auto);
+
+    if(format_buffer.end - format_buffer.begin < 2)
+      return false;
+
+    if(format_buffer.end - format_buffer.begin > 2)
+      builder.set_formatting(Formatting{});
+
+    const Buffer<CharT> inner_format = {format_buffer.begin + 1, format_buffer.end - 1};
+
+    builder.format.format.kind = get_format_kind(inner_format);
 
     format.buffer = format_buffer;
     format.operation = builder.Build();

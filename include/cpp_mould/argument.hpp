@@ -32,6 +32,7 @@ namespace mould {
     FPOINT,
     pointer,
     string,
+    character,
   };
 
   template<AutoFormattingChoice choice>
@@ -75,6 +76,9 @@ namespace mould {
 
   template<typename Formatter>
   NotImplemented format_string(const NotImplemented& value, Formatter formatter);
+
+  template<typename Formatter>
+  NotImplemented format_character(const NotImplemented& value, Formatter formatter);
 }
 
 #endif
