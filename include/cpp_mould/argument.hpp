@@ -45,22 +45,31 @@ namespace mould {
   template<typename Formatter>
   NotImplemented format_decimal(const NotImplemented& value, Formatter formatter);
 
+  template<typename Formatter>
   NotImplemented format_binary(const NotImplemented& value, Formatter formatter);
 
+  template<typename Formatter>
   NotImplemented format_octal(const NotImplemented& value, Formatter formatter);
 
+  template<typename Formatter>
   NotImplemented format_hex(const NotImplemented& value, Formatter formatter);
 
+  template<typename Formatter>
   NotImplemented format_HEX(const NotImplemented& value, Formatter formatter);
 
+  template<typename Formatter>
   NotImplemented format_exponent(const NotImplemented& value, Formatter formatter);
 
+  template<typename Formatter>
   NotImplemented format_EXPONENT(const NotImplemented& value, Formatter formatter);
 
+  template<typename Formatter>
   NotImplemented format_fpoint(const NotImplemented& value, Formatter formatter);
 
+  template<typename Formatter>
   NotImplemented format_FPOINT(const NotImplemented& value, Formatter formatter);
 
+  template<typename Formatter>
   NotImplemented format_pointer(const NotImplemented& value, Formatter formatter);
 
   template<typename Formatter>
