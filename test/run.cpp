@@ -2,7 +2,7 @@
 
 #include <cpp_mould.hpp>
 
-static constexpr char format[] = "Hello {}{}\n";
+static constexpr char format[] = "Hello {d}{s}\n";
 
 int main() {
   	constexpr auto formatter = mould::compile<format>();

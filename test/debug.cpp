@@ -6,7 +6,7 @@
 
 using namespace mould;
 
-static constexpr char format[] = "Hello {}\n";
+static constexpr char format[] = "Hello {s}\n";
 
 template<typename Formatter>
 auto dump_bytecode(const Formatter& formatter) {
