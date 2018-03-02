@@ -29,7 +29,7 @@ namespace mould {
     EXPONENT,
     Fpoint,
     FPOINT,
-    Point,
+    Pointer,
     String,
   };
 

@@ -10,202 +10,40 @@ namespace mould::internal {
   template<typename Then>
   struct Validate<NotImplemented, Then>;
 
-  template<typename T>
-  inline auto uniq_decimal_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_decimal(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_decimal(val, formatter);
-  }
+#ifdef CPP_MOULD_DELAYED_FORMATTER
+#error Trying #undef CPP_MOULD_DELAYED_FORMATTER before including this file
+#endif
+#define CPP_MOULD_DELAYED_FORMATTER(kind) \
+  template<typename T> \
+  inline auto uniq_##kind##_formatter(const T& val, Formatter formatter) \
+  -> typename Validate<decltype(format_##kind(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type { \
+    return format_##kind(val, formatter); \
+  } \
+ \
+  template<typename T> \
+  constexpr auto kind##_formatter(int) \
+  -> decltype(uniq_##kind##_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) { \
+    return uniq_##kind##_formatter<T>; \
+  } \
+ \
+  template<typename T> \
+  constexpr auto kind##_formatter(...) -> FormattingResult (*)(const T&, Formatter) { \
+    return nullptr; \
+  } \
 
-  template<typename T>
-  constexpr auto decimal_formatter(int)
-  -> decltype(uniq_decimal_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_decimal_formatter<T>;
-  }
+CPP_MOULD_DELAYED_FORMATTER(decimal)
+CPP_MOULD_DELAYED_FORMATTER(binary)
+CPP_MOULD_DELAYED_FORMATTER(octal)
+CPP_MOULD_DELAYED_FORMATTER(hex)
+CPP_MOULD_DELAYED_FORMATTER(HEX)
+CPP_MOULD_DELAYED_FORMATTER(exponent)
+CPP_MOULD_DELAYED_FORMATTER(EXPONENT)
+CPP_MOULD_DELAYED_FORMATTER(fpoint)
+CPP_MOULD_DELAYED_FORMATTER(FPOINT)
+CPP_MOULD_DELAYED_FORMATTER(pointer)
+CPP_MOULD_DELAYED_FORMATTER(string)
 
-  template<typename T>
-  constexpr auto decimal_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
-
-
-  template<typename T>
-  inline auto uniq_binary_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_binary(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_binary(val, formatter);
-  }
-
-  template<typename T>
-  constexpr auto binary_formatter(int)
-  -> decltype(uniq_binary_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_binary_formatter<T>;
-  }
-
-  template<typename T>
-  constexpr auto binary_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
-
-
-  template<typename T>
-  inline auto uniq_octal_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_octal(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_octal(val, formatter);
-  }
-
-  template<typename T>
-  constexpr auto octal_formatter(int)
-  -> decltype(uniq_octal_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_octal_formatter<T>;
-  }
-
-  template<typename T>
-  constexpr auto octal_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
-
-
-  template<typename T>
-  inline auto uniq_hex_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_hex(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_hex(val, formatter);
-  }
-
-  template<typename T>
-  constexpr auto hex_formatter(int)
-  -> decltype(uniq_hex_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_hex_formatter<T>;
-  }
-
-  template<typename T>
-  constexpr auto hex_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
-
-
-  template<typename T>
-  inline auto uniq_HEX_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_HEX(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_HEX(val, formatter);
-  }
-
-  template<typename T>
-  constexpr auto HEX_formatter(int)
-  -> decltype(uniq_HEX_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_HEX_formatter<T>;
-  }
-
-  template<typename T>
-  constexpr auto HEX_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
-
-
-  template<typename T>
-  inline auto uniq_exponent_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_exponent(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_exponent(val, formatter);
-  }
-
-  template<typename T>
-  constexpr auto exponent_formatter(int)
-  -> decltype(uniq_exponent_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_exponent_formatter<T>;
-  }
-
-  template<typename T>
-  constexpr auto exponent_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
-
-
-  template<typename T>
-  inline auto uniq_EXPONENT_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_EXPONENT(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_EXPONENT(val, formatter);
-  }
-
-  template<typename T>
-  constexpr auto EXPONENT_formatter(int)
-  -> decltype(uniq_EXPONENT_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_EXPONENT_formatter<T>;
-  }
-
-  template<typename T>
-  constexpr auto EXPONENT_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
-
-
-  template<typename T>
-  inline auto uniq_fpoint_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_fpoint(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_fpoint(val, formatter);
-  }
-
-  template<typename T>
-  constexpr auto fpoint_formatter(int)
-  -> decltype(uniq_fpoint_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_fpoint_formatter<T>;
-  }
-
-  template<typename T>
-  constexpr auto fpoint_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
-
-
-  template<typename T>
-  inline auto uniq_FPOINT_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_FPOINT(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_FPOINT(val, formatter);
-  }
-
-  template<typename T>
-  constexpr auto FPOINT_formatter(int)
-  -> decltype(uniq_FPOINT_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_FPOINT_formatter<T>;
-  }
-
-  template<typename T>
-  constexpr auto FPOINT_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
-
-
-  template<typename T>
-  inline auto uniq_pointer_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_pointer(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_pointer(val, formatter);
-  }
-
-  template<typename T>
-  constexpr auto pointer_formatter(int)
-  -> decltype(uniq_pointer_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_pointer_formatter<T>;
-  }
-
-  template<typename T>
-  constexpr auto pointer_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
-
-
-  template<typename T>
-  inline auto uniq_string_formatter(const T& val, Formatter formatter)
-  -> typename Validate<decltype(format_string(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type {
-    return format_string(val, formatter);
-  }
-
-  template<typename T>
-  constexpr auto string_formatter(int)
-  -> decltype(uniq_string_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) {
-    return uniq_string_formatter<T>;
-  }
-
-  template<typename T>
-  constexpr auto string_formatter(...) -> FormattingResult (*)(const T&, Formatter) {
-    return nullptr;
-  }
+#undef CPP_MOULD_DELAYED_FORMATTER
 
   struct Choice { };
 
@@ -219,12 +57,21 @@ namespace mould::internal {
   constexpr auto auto_formatter(int)
   -> typename Validate<decltype(uniq_auto_formatter(std::declval<const T&>(), std::declval<Choice>())), FormattingResult>::type (*)(const T&, Formatter) {
     using ChoiceT = decltype(uniq_auto_formatter(std::declval<const T&>(), std::declval<Choice>()));
-    if constexpr(ChoiceT::value == AutoFormattingChoice::Decimal) {
-      return decimal_formatter<T>(0);
-    } else if constexpr(ChoiceT::value == AutoFormattingChoice::String) {
-      return string_formatter<T>(0);
-    } else {
-      return nullptr;
+#define CPP_MOULD_AUTO_CHOICE(Kind, kind) if constexpr(ChoiceT::value == AutoFormattingChoice:: Kind) { return kind##_formatter<T>(0); } else
+    CPP_MOULD_AUTO_CHOICE(Decimal, decimal)
+    CPP_MOULD_AUTO_CHOICE(Binary, binary)
+    CPP_MOULD_AUTO_CHOICE(Octal, octal)
+    CPP_MOULD_AUTO_CHOICE(Hex, hex)
+    CPP_MOULD_AUTO_CHOICE(HEX, HEX)
+    CPP_MOULD_AUTO_CHOICE(Exponent, exponent)
+    CPP_MOULD_AUTO_CHOICE(EXPONENT, EXPONENT)
+    CPP_MOULD_AUTO_CHOICE(Fpoint, fpoint)
+    CPP_MOULD_AUTO_CHOICE(FPOINT, FPOINT)
+    CPP_MOULD_AUTO_CHOICE(Pointer, pointer)
+    CPP_MOULD_AUTO_CHOICE(String, string)
+#undef CPP_MOULD_AUTO_CHOICE
+    /* else */ {
+    	return nullptr;
     }
   }
 
@@ -254,108 +101,35 @@ namespace mould::internal {
 
   template<typename T>
   struct type_erase_function {
-    static FormattingResult format_auto(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::automatic == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::automatic(*reinterpret_cast<const T*>(self), formatter);
-      }
+#define CPP_MOULD_TYPE_ERASED_FORMAT(kind) \
+    static FormattingResult format_##kind(const void* self, Formatter formatter) { \
+      if constexpr(TypedFormatter<T>:: kind == nullptr) { \
+        return FormattingResult::Error; \
+      } else { \
+        return TypedFormatter<T>:: kind(*reinterpret_cast<const T*>(self), formatter); \
+      } \
     }
 
-    static FormattingResult format_decimal(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::decimal == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::decimal(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
-
-    static FormattingResult format_binary(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::binary == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::binary(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
-
-    static FormattingResult format_octal(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::octal == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::octal(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
-
-    static FormattingResult format_hex(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::hex == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::hex(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
-
-    static FormattingResult format_HEX(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::HEX == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::HEX(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
-
-    static FormattingResult format_exponent(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::exponent == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::exponent(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
-
-    static FormattingResult format_EXPONENT(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::EXPONENT == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::EXPONENT(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
-
-    static FormattingResult format_fpoint(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::fpoint == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::fpoint(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
-
-    static FormattingResult format_FPOINT(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::FPOINT == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::FPOINT(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
-
-    static FormattingResult format_pointer(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::pointer == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::pointer(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
-
-    static FormattingResult format_string(const void* self, Formatter formatter) {
-      if constexpr(TypedFormatter<T>::string == nullptr) {
-        return FormattingResult::Error;
-      } else {
-        return TypedFormatter<T>::string(*reinterpret_cast<const T*>(self), formatter);
-      }
-    }
+    CPP_MOULD_TYPE_ERASED_FORMAT(automatic)
+    CPP_MOULD_TYPE_ERASED_FORMAT(decimal)
+    CPP_MOULD_TYPE_ERASED_FORMAT(binary)
+    CPP_MOULD_TYPE_ERASED_FORMAT(octal)
+    CPP_MOULD_TYPE_ERASED_FORMAT(hex)
+    CPP_MOULD_TYPE_ERASED_FORMAT(HEX)
+    CPP_MOULD_TYPE_ERASED_FORMAT(exponent)
+    CPP_MOULD_TYPE_ERASED_FORMAT(EXPONENT)
+    CPP_MOULD_TYPE_ERASED_FORMAT(fpoint)
+    CPP_MOULD_TYPE_ERASED_FORMAT(FPOINT)
+    CPP_MOULD_TYPE_ERASED_FORMAT(pointer)
+    CPP_MOULD_TYPE_ERASED_FORMAT(string)
+#undef CPP_MOULD_TYPE_ERASED_FORMAT
   };
 
   struct TypeErasedFormatter {
     template<typename T>
     constexpr static TypeErasedFormatter Construct() {
       return TypeErasedFormatter {
-        type_erase_function<T>::format_auto,
+        type_erase_function<T>::format_automatic,
         type_erase_function<T>::format_decimal,
         type_erase_function<T>::format_string,
       };
