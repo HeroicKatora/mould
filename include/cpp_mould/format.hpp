@@ -33,14 +33,14 @@ namespace mould {
     char* reserve(size_t length) const;
 
     Format& format() const;
-  private:
-    friend class internal::Engine;
-    internal::Engine& engine;
-    Format _format;
 
     constexpr Formatter(internal::Engine& engine, Format format)
       : engine(engine), _format(format)
       { }
+  private:
+    friend class internal::Engine;
+    internal::Engine& engine;
+    Format _format;
   };
 }
 

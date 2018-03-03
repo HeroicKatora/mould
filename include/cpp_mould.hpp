@@ -5,6 +5,7 @@
 
 #include <cpp_mould/compile.hpp>
 #include <cpp_mould/engine.hpp>
+#include <cpp_mould/runtime_driver.hpp>
 
 #include <cpp_mould/arguments/int.hpp>
 #include <cpp_mould/arguments/strings.hpp>
