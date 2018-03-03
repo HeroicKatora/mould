@@ -25,27 +25,25 @@ namespace mould::internal {
   class RuntimeDriver {
   public:
     RuntimeDriver(
+      std::string& output,
       const TypeErasedByteCode<char>& byte_code,
       const TypeErasedArgument* args_begin,
       const TypeErasedArgument* args_end)
-      : output(),
+      : engine(output),
         format_buffer(byte_code.format_buffer()),
         byte_code(byte_code.code_buffer()),
         immediates(byte_code.immediate_buffer()),
-        args_begin(args_begin), args_end(args_end),
-        engine(output)
+        args_begin(args_begin), args_end(args_end)
     { }
 
     DriverResult execute();
-    std::string result() &&;
   private:
-    std::string output;
+    Engine engine;
     const Buffer<const char> format_buffer;
     Buffer<const Codepoint> byte_code;
     Buffer<const Immediate> immediates;
     const TypeErasedArgument* args_begin;
     const TypeErasedArgument* args_end;
-    Engine engine;
   };
 
   struct TypeErasedArgument {
@@ -77,12 +75,12 @@ namespace mould {
     TypeErasedArgument untyped_args [sizeof...(Arguments)]
       = {TypeErasedArgument{arguments}...};
 
-    RuntimeDriver driver {buffer, std::begin(untyped_args), std::end(untyped_args)};
+    RuntimeDriver driver {output, buffer, std::begin(untyped_args), std::end(untyped_args)};
     const auto result = driver.execute();
 
     switch(result.type) {
     case DriverResultType::Ok:
-      return std::move(driver).result();
+      return output;
     case DriverResultType::UnsupportedFormatting:
       return std::string("Formatting not supported: ") + describe(result.cause_kind);
     case DriverResultType::FormattingError:
@@ -100,7 +98,7 @@ namespace mould::internal {
     while(operation.read(byte_code, immediates) == ReadStatus::NoError) {
       switch(operation.opcode.opcode()) {
       case OpCode::Literal:
-        output.append(
+        engine.append(
           format_buffer.begin + operation.literal.offset,
           format_buffer.begin + operation.literal.offset + operation.literal.length);
         break;
@@ -150,10 +148,6 @@ namespace mould::internal {
       DriverResultType::Ok,
       FormatKind::Auto,
     };
-  }
-
-  std::string RuntimeDriver::result() && {
-    return output;
   }
 
   template<typename T>

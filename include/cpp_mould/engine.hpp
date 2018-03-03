@@ -18,6 +18,9 @@ namespace mould::internal {
         { }
 
     friend class ::mould::Formatter;
+    inline void append(const char* begin, const char* end) const {
+      output.append(begin, end);
+    }
   private:
     std::string& output;
   };
