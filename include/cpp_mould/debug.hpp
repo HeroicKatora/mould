@@ -92,6 +92,8 @@ namespace mould::internal {
     case OpCode::Insert: {
       std::stringstream description(std::string{});
       description << "Insert: format (" << describe(latest.operation.operation.insert_format);
+      description << ") index (" << describe(latest.formatting.format.index)
+                  << ", " << (int) latest.formatting.index;
       description << ") kind (" << describe(latest.formatting.format.kind);
       description << ") width (" << describe(latest.formatting.format.width)
                   << ", " << latest.formatting.width;
