@@ -302,6 +302,16 @@ namespace mould::internal {
       return ReadStatus::NoError;
     }
   };
+
+  constexpr size_t insert_count(ByteCodeBuffer buffer) {
+    EncodedOperation op = {};
+    size_t count = 0;
+    while(buffer >> op) {
+      if(op.opcode() == OpCode::Insert)
+        count += 1;
+    }
+    return count;
+  }
 }
 
 #endif

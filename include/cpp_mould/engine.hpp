@@ -27,12 +27,6 @@ namespace mould::internal {
 
   template<typename T>
   Immediate value_as_immediate(const T&);
-
-  template<typename T>
-  struct TypedArgument {
-    const T& value;
-    FormattingResult (*function)(const T&, Formatter);
-  };
 }
 
 namespace mould {
