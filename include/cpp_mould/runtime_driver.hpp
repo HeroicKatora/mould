@@ -89,7 +89,6 @@ namespace mould {
 
 namespace mould::internal {
   DriverResult RuntimeDriver::execute() {
-    unsigned auto_index = 0;
 
     while(!iterator.code_buffer.empty()) {
       auto latest = *iterator;
@@ -100,22 +99,12 @@ namespace mould::internal {
           format_buffer.begin + latest.literal.offset + latest.literal.length);
         break;
       case OpCode::Insert: {
-          unsigned index = auto_index;
-
           auto& formatting = latest.formatting;
           auto& description = formatting.format;
 
-          if(description.index == InlineValue::Inline) {
-            index = formatting.index;
-          }
-
-          if(index >= auto_index)
-            auto_index = index + 1;
-
-          auto& argument = args_begin[index];
+          auto& argument = args_begin[formatting.index];
           auto formatting_fn = argument.formatter_for(description.kind);
 
-          // FIXME: we can determine at compile time which functions are needed!
           if(!formatting_fn)
             return DriverResult {
               DriverResultType::UnsupportedFormatting,

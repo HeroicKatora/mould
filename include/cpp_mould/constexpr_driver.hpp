@@ -20,13 +20,9 @@ namespace mould::internal::constexpr_driver {
     ArgumentInformation<insert_count(T::code)> result;
 
     size_t* output_ptr = &result.indices[0];
+    FullOperationIterator iterator{T::code, T::immediates};
 
-    while((code_buffer >> op_buf)) {
-      switch(op_buf.opcode()) {
-      case OpCode::Insert:
-        (imm_buffer >> formatting);
-        *ouput_ptr++ = formatting.index();
-      }
+    while(!iterator.code_buffer.empty()) {
     }
 
     return result;

@@ -356,9 +356,11 @@ namespace mould::internal {
 
     FullOperation latest;
     ReadStatus status;
+    int auto_index;
 
     constexpr FullOperationIterator(ByteCodeBuffer code, ImmediateBuffer imm)
-      : code_buffer(code), imm_buffer(imm), latest(), status(ReadStatus::NoError)
+      : code_buffer(code), imm_buffer(imm), latest(), status(ReadStatus::NoError),
+        auto_index(0)
     { }
 
     constexpr FullOperation operator*();
@@ -381,6 +383,10 @@ namespace mould::internal {
     case OpCode::Insert:
       if((status = imm_buffer >> latest.formatting) != ReadStatus::NoError)
         return latest;
+      if(latest.formatting.format.index == InlineValue::Auto)
+        latest.formatting.index = auto_index++;
+      else
+        auto_index = std::max(auto_index, latest.formatting.index + 1);
       break;
     case OpCode::Literal:
       if((status = imm_buffer >> latest.literal) != ReadStatus::NoError)
