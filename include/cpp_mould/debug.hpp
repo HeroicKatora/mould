@@ -16,33 +16,6 @@ namespace mould::internal {
     return { std::begin(buffer), std::end(buffer) };
   }
 
-  // Holds an encoded operation and room for the maximum amount of additions.
-  struct DebuggableOperation {
-    EncodedOperation opcode;
-
-    EncodedStringLiteral literal;
-    Formatting formatting;
-
-    constexpr ReadStatus read(ByteCodeBuffer& code, ImmediateBuffer& immediates) {
-      if(!(code >> opcode)) {
-        return ReadStatus::MissingOpcode;
-      }
-      switch(opcode.opcode()) {
-      case OpCode::Insert:
-        if(opcode.insert_format() == ImmediateValue::Auto)
-          return ReadStatus::NoError;
-        else if(opcode.insert_format() == ImmediateValue::ReadImmediate) {
-          return (immediates >> formatting);
-        }
-        return ReadStatus::InvalidFormatImmediate;
-      case OpCode::Literal:
-        return (immediates >> literal);
-      default:
-        return ReadStatus::InvalidOpcode;
-      }
-    }
-  };
-
   constexpr const char* describe(ReadStatus status) {
     switch(status) {
     case ReadStatus::NoError: return "NoError";
@@ -103,45 +76,38 @@ namespace mould::internal {
   template<typename CharT = const char>
   std::string describe_next_byte_code(
     const Buffer<CharT>& format_string,
-    ByteCodeBuffer& op_buffer,
-    ImmediateBuffer& im_buffer
+    FullOperationIterator& operation
   ) {
-    Immediate auto_index = 0;
-    Immediate normal_index = 0;
-    ReadStatus status = ReadStatus::NoError;
-
-    DebuggableOperation operation {};
-
-    if(op_buffer.empty())
+    if(operation.code_buffer.empty())
       return "!!!Trying to describe an empty buffer";
 
-    if((status = operation.read(op_buffer, im_buffer)) != ReadStatus::NoError)
-      return describe(status);
+    if((++operation).status != ReadStatus::NoError)
+      return describe(operation.status);
 
-    switch(operation.opcode.opcode()) {
+    auto latest = *operation;
+    switch(latest.operation.operation.type) {
     case OpCode::Literal:
       return std::string("Literal: \"")
              + std::string(
-                operation.literal.offset + format_string.begin,
-                operation.literal.length)
+                latest.literal.offset + format_string.begin,
+                latest.literal.length)
              + "\"";
     case OpCode::Insert: {
       std::stringstream description(std::string{});
-      description << "Insert: format (" << describe(operation.opcode.insert_format());
-      description << ") kind (" << describe(operation.formatting.format.kind);
-      description << ") width (" << describe(operation.formatting.format.width)
-                  << ", " << operation.formatting.width;
-      description << ") precision (" << describe(operation.formatting.format.precision)
-                  << ", " << operation.formatting.precision;
-      description << ") padding (" << describe(operation.formatting.format.padding)
-                  << ", " << operation.formatting.padding;
-      description << ") alignment (" << describe(operation.formatting.format.alignment);
-      description << ") sign (" << describe(operation.formatting.format.sign);
+      description << "Insert: format (" << describe(latest.operation.operation.insert_format);
+      description << ") kind (" << describe(latest.formatting.format.kind);
+      description << ") width (" << describe(latest.formatting.format.width)
+                  << ", " << latest.formatting.width;
+      description << ") precision (" << describe(latest.formatting.format.precision)
+                  << ", " << latest.formatting.precision;
+      description << ") padding (" << describe(latest.formatting.format.padding)
+                  << ", " << latest.formatting.padding;
+      description << ") alignment (" << describe(latest.formatting.format.alignment);
+      description << ") sign (" << describe(latest.formatting.format.sign);
       description << ")";
       return description.str();
     }
     default:
-      op_buffer.begin = op_buffer.end; // Forcibly consume the buffer
       return "!!!Unknown op code";
     }
   }
@@ -149,17 +115,15 @@ namespace mould::internal {
   template<typename CharT>
   struct Descriptor {
     Buffer<const CharT> format_buffer;
-    ByteCodeBuffer op_buffer;
-    ImmediateBuffer im_buffer;
+    FullOperationIterator iterator;
 
     constexpr Descriptor(const TypeErasedByteCode<CharT>& formatter) :
         format_buffer { formatter.format_buffer() },
-        op_buffer { formatter.code_buffer() },
-        im_buffer { formatter.immediate_buffer() }
+        iterator { formatter.code_buffer(), formatter.immediate_buffer() }
         { }
 
     constexpr bool empty() const {
-      return op_buffer.empty();
+      return iterator.code_buffer.empty() || iterator.status != ReadStatus::NoError;
     };
 
     constexpr operator bool() const {
@@ -168,7 +132,7 @@ namespace mould::internal {
 
     std::string operator*() {
       if(empty()) return {};
-      return describe_next_byte_code<const CharT>(format_buffer, op_buffer, im_buffer);
+      return describe_next_byte_code<const CharT>(format_buffer, iterator);
     }
   };
 }

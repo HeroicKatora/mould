@@ -31,8 +31,7 @@ namespace mould::internal {
       const TypeErasedArgument* args_end)
       : engine(output),
         format_buffer(byte_code.format_buffer()),
-        byte_code(byte_code.code_buffer()),
-        immediates(byte_code.immediate_buffer()),
+        iterator(byte_code.code_buffer(), byte_code.immediate_buffer()),
         args_begin(args_begin), args_end(args_end)
     { }
 
@@ -40,8 +39,7 @@ namespace mould::internal {
   private:
     Engine engine;
     const Buffer<const char> format_buffer;
-    Buffer<const Codepoint> byte_code;
-    Buffer<const Immediate> immediates;
+    FullOperationIterator iterator;
     const TypeErasedArgument* args_begin;
     const TypeErasedArgument* args_end;
   };
@@ -93,19 +91,18 @@ namespace mould::internal {
   DriverResult RuntimeDriver::execute() {
     unsigned auto_index = 0;
 
-    DebuggableOperation operation = {};
-
-    while(operation.read(byte_code, immediates) == ReadStatus::NoError) {
-      switch(operation.opcode.opcode()) {
+    while((++iterator).status == ReadStatus::NoError) {
+      auto& latest = iterator.latest;
+      switch(latest.operation.operation.type) {
       case OpCode::Literal:
         engine.append(
-          format_buffer.begin + operation.literal.offset,
-          format_buffer.begin + operation.literal.offset + operation.literal.length);
+          format_buffer.begin + latest.literal.offset,
+          format_buffer.begin + latest.literal.offset + latest.literal.length);
         break;
       case OpCode::Insert: {
           unsigned index = auto_index;
 
-          auto& formatting = operation.formatting;
+          auto& formatting = latest.formatting;
           auto& description = formatting.format;
 
           if(description.index == InlineValue::Inline) {

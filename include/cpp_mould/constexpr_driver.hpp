@@ -18,12 +18,7 @@ namespace mould::internal::constexpr_driver {
   constexpr auto argument_indices()
   -> ArgumentInformation<insert_count(T::code)> {
     ArgumentInformation<insert_count(T::code)> result;
-    ByteCodeBuffer code_buffer = T::code;
-    ImmediateBuffer imm_buffer = T::immediates;
 
-    EncodedOperation op_buf;
-    EncodedStringLiteral lit_buf;
-    Formatting formatting;
     size_t* output_ptr = &result.indices[0];
 
     while((code_buffer >> op_buf)) {
