@@ -10,14 +10,14 @@ namespace mould::internal {
   template<typename Symbol>
   constexpr bool operator<<(Buffer<Symbol>& buffer, Symbol imm) {
     if(buffer.empty()) return false;
-    *buffer.begin++ = imm;
+    *buffer._begin++ = imm;
     return true;
   }
 
   template<typename Symbol>
   constexpr bool operator>>(Buffer<const Symbol>& buffer, Symbol& imm) {
     if(buffer.empty()) return false;
-    imm = *buffer.begin++;
+    imm = *buffer._begin++;
     return true;
   }
 

@@ -83,7 +83,7 @@ namespace mould::internal {
 
   template<typename CharT>
   constexpr FormatKind get_format_kind(Buffer<CharT> inner_format) {
-    switch(inner_format.end[-1]) {
+    switch(inner_format.end()[-1]) {
     case 'b': return FormatKind::binary;
     case 'c': return FormatKind::character;
     case 'd': return FormatKind::decimal;
@@ -112,14 +112,14 @@ namespace mould::internal {
     StringLiteral<CharT>& literal)
   {
     auto& buffer = input.buffer;
-    const auto literal_begin = buffer.begin;
-    while(buffer.begin < buffer.end && *buffer.begin != '{') buffer.begin++;
+    const auto literal_begin = buffer.begin();
+    while(!buffer.empty() && *buffer.begin() != '{') buffer._begin++;
 
     OperationBuilder builder = {};
     builder.op = { OpCode::Literal };
     builder.literal = EncodedStringLiteral {
-      static_cast<Immediate>(literal_begin - input.full_input.begin),
-      static_cast<Immediate>(buffer.begin - literal_begin)
+      static_cast<Immediate>(literal_begin - input.full_input.begin()),
+      static_cast<Immediate>(buffer.begin() - literal_begin)
     };
 
     literal.operation = builder.Build();
@@ -133,30 +133,30 @@ namespace mould::internal {
     FormatSpecifier<CharT>& format)
   {
     auto& buffer = input.buffer;
-    const auto begin = buffer.begin;
+    const auto begin = buffer.begin();
 
-    for(;; buffer.begin++) {
-      if(buffer.begin == buffer.end) {
+    for(;; buffer._begin++) {
+      if(buffer.empty()) {
         return false;
       }
-      if(*buffer.begin == '}') {
-        buffer.begin++;
+      if(*buffer.begin() == '}') {
+        buffer._begin++;
         break;
       }
     }
 
-    const Buffer<CharT> format_buffer = { begin, buffer.begin };
+    const Buffer<CharT> format_buffer = { begin, buffer.begin() };
 
     OperationBuilder builder = {};
     builder.op = Operation::Insert(ImmediateValue::Auto);
 
-    if(format_buffer.end - format_buffer.begin < 2)
+    if(format_buffer.length() < 2)
       return false;
 
-    if(format_buffer.end - format_buffer.begin > 2)
+    if(format_buffer.length() > 2)
       builder.set_formatting(Formatting{});
 
-    const Buffer<CharT> inner_format = {format_buffer.begin + 1, format_buffer.end - 1};
+    const Buffer<CharT> inner_format = {format_buffer._begin + 1, format_buffer._end - 1};
 
     builder.format.format.kind = get_format_kind(inner_format);
 

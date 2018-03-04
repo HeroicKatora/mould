@@ -128,19 +128,24 @@ namespace mould::internal {
 
   template<typename CharT>
   struct Buffer {
-    CharT* begin;
-    CharT* end;
+    CharT* _begin;
+    CharT* _end;
 
     constexpr Buffer(CharT* begin, CharT* end)
-      : begin(begin), end(end)
+      : _begin(begin), _end(end)
       { }
 
     template<size_t N>
     constexpr Buffer(CharT (&buffer)[N])
-      : begin(buffer), end(buffer + N)
+      : _begin(buffer), _end(buffer + N)
       { }
 
-    constexpr bool empty() const { return begin == end; }
+    constexpr bool empty() const { return _begin == _end; }
+
+    constexpr CharT* begin() const { return _begin; }
+    constexpr CharT* end() const { return _end; }
+
+    constexpr long int length() const { return _end - _begin; }
   };
 
   using ByteCodeBuffer = Buffer<const Codepoint>;

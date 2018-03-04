@@ -95,8 +95,8 @@ namespace mould::internal {
       switch(latest.operation.operation.type) {
       case OpCode::Literal:
         engine.append(
-          format_buffer.begin + latest.literal.offset,
-          format_buffer.begin + latest.literal.offset + latest.literal.length);
+          format_buffer.begin() + latest.literal.offset,
+          format_buffer.begin() + latest.literal.offset + latest.literal.length);
         break;
       case OpCode::Insert: {
           auto& formatting = latest.formatting;

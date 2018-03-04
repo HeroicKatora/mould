@@ -86,7 +86,7 @@ namespace mould::internal {
     case OpCode::Literal:
       return std::string("Literal: \"")
              + std::string(
-                latest.literal.offset + format_string.begin,
+                format_string.begin() + latest.literal.offset,
                 latest.literal.length)
              + "\"";
     case OpCode::Insert: {
