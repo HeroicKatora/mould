@@ -9,14 +9,14 @@ namespace mould::internal {
 
   template<typename Symbol>
   constexpr bool operator<<(Buffer<Symbol>& buffer, Symbol imm) {
-    if(buffer.begin == buffer.end) return false;
+    if(buffer.empty()) return false;
     *buffer.begin++ = imm;
     return true;
   }
 
   template<typename Symbol>
   constexpr bool operator>>(Buffer<const Symbol>& buffer, Symbol& imm) {
-    if(buffer.begin == buffer.end) return false;
+    if(buffer.empty()) return false;
     imm = *buffer.begin++;
     return true;
   }
@@ -59,14 +59,14 @@ namespace mould::internal {
     }
 
     friend constexpr bool operator<<(
-      Buffer<Codepoint>& buffer,
+      ByteCodeOutputBuffer& buffer,
       EncodedOperation operation)
     {
       return (buffer << operation.encoded);
     }
 
     friend constexpr bool operator>>(
-      Buffer<const Codepoint>& buffer,
+      ByteCodeBuffer& buffer,
       EncodedOperation& operation)
     {
       EncodedOperation internal {};
@@ -146,14 +146,14 @@ namespace mould::internal {
     }
 
     friend constexpr bool operator<<(
-      Buffer<Immediate>& buffer,
+      ImmediateOutputBuffer& buffer,
       EncodedFormatDescription operation)
     {
       return (buffer << operation.encoded);
     }
 
     friend constexpr bool operator>>(
-      Buffer<const Immediate>& buffer,
+      ImmediateBuffer& buffer,
       EncodedFormatDescription& operation)
     {
       EncodedFormatDescription internal {};
@@ -340,6 +340,7 @@ namespace mould::internal {
       if(!(buffer >> internal_op))
         return ReadStatus::MissingOpcode;
       operation.operation = internal_op.FullOperation();
+      return ReadStatus::NoError;
     }
   };
 

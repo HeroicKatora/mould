@@ -131,7 +131,6 @@ namespace mould::internal {
     }
 
     std::string operator*() {
-      if(empty()) return {};
       return describe_next_byte_code<const CharT>(format_buffer, iterator);
     }
   };
