@@ -34,6 +34,10 @@ namespace mould::internal {
     static constexpr Operation Insert(ImmediateValue format) {
       return { OpCode::Insert, format };
     }
+
+    static constexpr Operation Uninitialized() {
+      return { OpCode::Literal, ImmediateValue::Auto };
+    }
   };
 
 #define CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(WHAT) \
@@ -107,6 +111,19 @@ namespace mould::internal {
     // 6 inline values (48 bit) for all kinds of fancy stuff.
     // TODO: only 2 this for 32bit systems.
     unsigned char inlines[6];
+
+    static constexpr FormatDescription Uninitialized() {
+      return FormatDescription {
+        FormatKind::Auto,
+        InlineValue::Auto,
+        InlineValue::Auto,
+        InlineValue::Auto,
+        Alignment::Default,
+        Sign::Default,
+        InlineValue::Auto,
+        {}
+      };
+    }
   };
 
   template<typename CharT>

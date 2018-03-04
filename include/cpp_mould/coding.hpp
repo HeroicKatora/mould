@@ -41,6 +41,13 @@ namespace mould::internal {
       }
     }
 
+    constexpr Operation FullOperation() const {
+      Operation operation = {};
+      operation.type = opcode();
+      operation.insert_format = insert_format();
+      return operation;
+    }
+
     constexpr OpCode opcode() const {
       if((encoded & 0x1) == 0) return OpCode::Literal;
       else return OpCode::Insert;
@@ -217,6 +224,11 @@ namespace mould::internal {
     Immediate width, precision, padding;
     Codepoint index;
 
+    constexpr Formatting()
+      : format{FormatDescription::Uninitialized()},
+      width{}, precision{}, padding{}, index{}
+      { }
+
     constexpr EncodedFormatting compress() const {
       auto final_format = format;
 
@@ -311,6 +323,71 @@ namespace mould::internal {
         count += 1;
     }
     return count;
+  }
+
+  struct DecodedOperation {
+    Operation operation;
+
+    constexpr DecodedOperation()
+      : operation(Operation::Uninitialized())
+    { }
+
+    friend constexpr ReadStatus operator>>(
+      ByteCodeBuffer& buffer,
+      DecodedOperation& operation)
+    {
+      EncodedOperation internal_op = {};
+      if(!(buffer >> internal_op))
+        return ReadStatus::MissingOpcode;
+      operation.operation = internal_op.FullOperation();
+    }
+  };
+
+  struct FullOperation {
+    DecodedOperation operation;
+    EncodedStringLiteral literal;
+    Formatting formatting;
+  };
+
+  struct FullOperationIterator {
+    ByteCodeBuffer code_buffer;
+    ImmediateBuffer imm_buffer;
+
+    FullOperation latest;
+    ReadStatus status;
+
+    constexpr FullOperationIterator(ByteCodeBuffer code, ImmediateBuffer imm)
+      : code_buffer(code), imm_buffer(imm), latest(), status(ReadStatus::NoError)
+    {
+      this->operator++();
+    }
+
+    constexpr FullOperation operator*() const;
+    constexpr FullOperationIterator& operator++();
+  };
+
+  constexpr FullOperationIterator& FullOperationIterator::operator++() {
+    if(status != ReadStatus::NoError)
+      return *this;
+
+    if((status = code_buffer >> latest.operation) != ReadStatus::NoError) {
+      return *this;
+    }
+
+    switch(latest.operation.operation.type) {
+    case OpCode::Insert:
+      if((status = imm_buffer >> latest.formatting) != ReadStatus::NoError)
+        return *this;
+    case OpCode::Literal:
+      if((status = imm_buffer >> latest.literal) != ReadStatus::NoError)
+        return *this;
+    }
+
+    return *this;
+  }
+
+  constexpr FullOperation FullOperationIterator::operator*() const {
+    return latest;
   }
 }
 
