@@ -11,11 +11,11 @@ static constexpr char format[] = "Hello {s}\n";
 template<typename Formatter>
 auto dump_bytecode(const Formatter& formatter) {
   std::cout << "Bytecode\n";
-  for(const auto i : formatter.code) {
+  for(const auto i : formatter.data.code) {
     std::cout << (unsigned int) i << "\n";
   }
   std::cout << "Immediates\n";
-  for(const auto i : formatter.immediates) {
+  for(const auto i : formatter.data.immediates) {
     std::cout << i << "\n";
   }
 }

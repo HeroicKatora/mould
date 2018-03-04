@@ -116,11 +116,9 @@ namespace mould::internal {
       return { immediates };
     }
   };
-}
 
-namespace mould {
   template<auto& format_str>
-  constexpr auto compile()
+  constexpr auto _compile()
   -> internal::ByteCode<
       internal::ByteOpCount<format_str>,
       internal::ImmediateCount<format_str>,
@@ -164,4 +162,33 @@ namespace mould {
   }
 }
 
+namespace mould {
+  template<auto& format_str>
+  struct CompiledFormatString 
+    : internal::TypeErasedByteCode<decltype(internal::char_type(format_str))> {
+    constexpr static auto data = internal::_compile<format_str>();
+    using CharT = typename decltype(data)::CharT;
+
+    internal::Buffer<const CharT> format_buffer() const override {
+      return { data.format_string };
+    }
+
+    internal::ByteCodeBuffer code_buffer() const override {
+      return { data.code };
+    }
+
+    internal::ImmediateBuffer immediate_buffer() const override {
+      return { data.immediates };
+    }
+  };
+
+  template<auto& format_str>
+  constexpr auto compile()
+  -> CompiledFormatString<format_str>
+  {
+    return CompiledFormatString<format_str>{};
+  }
+}
+
 #endif
+
