@@ -91,8 +91,8 @@ namespace mould::internal {
   DriverResult RuntimeDriver::execute() {
     unsigned auto_index = 0;
 
-    while((++iterator).status == ReadStatus::NoError) {
-      auto& latest = iterator.latest;
+    while(!iterator.code_buffer.empty()) {
+      auto latest = *iterator;
       switch(latest.operation.operation.type) {
       case OpCode::Literal:
         engine.append(

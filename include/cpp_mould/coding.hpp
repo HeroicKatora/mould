@@ -359,35 +359,35 @@ namespace mould::internal {
 
     constexpr FullOperationIterator(ByteCodeBuffer code, ImmediateBuffer imm)
       : code_buffer(code), imm_buffer(imm), latest(), status(ReadStatus::NoError)
-    {
-      this->operator++();
-    }
+    { }
 
-    constexpr FullOperation operator*() const;
+    constexpr FullOperation operator*();
     constexpr FullOperationIterator& operator++();
   };
 
   constexpr FullOperationIterator& FullOperationIterator::operator++() {
+    return *this;
+  }
+
+  constexpr FullOperation FullOperationIterator::operator*() {
     if(status != ReadStatus::NoError)
-      return *this;
+      return latest;
 
     if((status = code_buffer >> latest.operation) != ReadStatus::NoError) {
-      return *this;
+      return latest;
     }
 
     switch(latest.operation.operation.type) {
     case OpCode::Insert:
       if((status = imm_buffer >> latest.formatting) != ReadStatus::NoError)
-        return *this;
+        return latest;
+      break;
     case OpCode::Literal:
       if((status = imm_buffer >> latest.literal) != ReadStatus::NoError)
-        return *this;
+        return latest;
+      break;
     }
 
-    return *this;
-  }
-
-  constexpr FullOperation FullOperationIterator::operator*() const {
     return latest;
   }
 }

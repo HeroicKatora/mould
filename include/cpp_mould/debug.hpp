@@ -74,14 +74,11 @@ namespace mould::internal {
   }
 
   template<typename CharT = const char>
-  std::string describe_next_byte_code(
+  std::string describe_operation(
     const Buffer<CharT>& format_string,
     FullOperationIterator& operation
   ) {
-    if(operation.code_buffer.empty())
-      return "!!!Trying to describe an empty buffer";
-
-    if((++operation).status != ReadStatus::NoError)
+    if(operation.status != ReadStatus::NoError)
       return describe(operation.status);
 
     auto latest = *operation;
@@ -116,14 +113,16 @@ namespace mould::internal {
   struct Descriptor {
     Buffer<const CharT> format_buffer;
     FullOperationIterator iterator;
+    bool error_read;
 
     constexpr Descriptor(const TypeErasedByteCode<CharT>& formatter) :
         format_buffer { formatter.format_buffer() },
-        iterator { formatter.code_buffer(), formatter.immediate_buffer() }
+        iterator { formatter.code_buffer(), formatter.immediate_buffer() },
+        error_read(true)
         { }
 
     constexpr bool empty() const {
-      return iterator.code_buffer.empty() || iterator.status != ReadStatus::NoError;
+      return iterator.code_buffer.empty() && error_read;
     };
 
     constexpr operator bool() const {
@@ -131,7 +130,19 @@ namespace mould::internal {
     }
 
     std::string operator*() {
-      return describe_next_byte_code<const CharT>(format_buffer, iterator);
+      if(iterator.status != ReadStatus::NoError) {
+        error_read = true;
+      }
+      return describe_operation<const CharT>(format_buffer, iterator);
+    }
+
+    ReadStatus operator++() {
+      if(iterator.status != ReadStatus::NoError) {
+        return iterator.status;
+      }
+      ++iterator;
+      error_read = iterator.status == ReadStatus::NoError;
+      return iterator.status;
     }
   };
 }
