@@ -78,10 +78,14 @@ namespace mould::internal::constexpr_driver {
   }
 
   template<typename T, typename ArgsTuple, size_t ... indices>
-  constexpr auto BuildExpressions(std::index_sequence<indices...>) {
+  constexpr auto build_expressions(std::index_sequence<indices...>) {
     auto& data = ExpressionData<T>;
     return initialize<T>(uninitialized_expression<data.indices[indices], ArgsTuple>() ...);
   }
+
+  template<typename Format, typename ... Arguments>
+  constexpr auto CompiledExpressions = build_expressions<Format, std::tuple<Arguments...>>(
+    std::make_index_sequence<std::size(Format::data.code)>{});
 }
 
 namespace mould {
@@ -91,8 +95,7 @@ namespace mould {
     Arguments&&... arguments)
   {
     using namespace internal::constexpr_driver;
-    constexpr auto expressions = BuildExpressions<Format, std::tuple<Arguments...>>
-      (std::make_index_sequence<std::size(Format::data.code)>{});
+    constexpr auto expressions = CompiledExpressions<Format, Arguments...>;
     std::stringstream output;
 
     // for(auto index: arg_indices.indices) output << index;
