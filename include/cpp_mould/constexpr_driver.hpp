@@ -19,6 +19,7 @@ namespace mould::internal::constexpr_driver {
     FormattingResult (*function)(const T&, Formatter);
 
     constexpr TypedArgumentExpression initialize(FullOperation operation) {
+      static_assert(TypedFormatter<T>::automatic != nullptr);
       return { argument_index, TypedFormatter<T>::automatic };
     }
   };
