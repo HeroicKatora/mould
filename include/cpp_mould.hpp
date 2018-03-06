@@ -9,6 +9,8 @@
 #include "cpp_mould/constexpr_driver.hpp"
 
 #include "cpp_mould/arguments/int.hpp"
+#include "cpp_mould/arguments/float.hpp"
 #include "cpp_mould/arguments/strings.hpp"
+#include "cpp_mould/arguments/pointer.hpp"
 
 #endif

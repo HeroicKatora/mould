@@ -73,7 +73,6 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
 #undef CPP_MOULD_TYPED_CONSTEXPR
   };
 
-
   template<typename T>
   struct type_erase_function {
 #define CPP_MOULD_TYPE_ERASED_FORMAT(kind) \

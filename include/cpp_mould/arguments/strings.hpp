@@ -14,6 +14,12 @@ namespace mould {
     formatter.append(value);
     return FormattingResult::Success;
   }
+
+  template<typename Formatter>
+  FormattingResult format_string(char value, Formatter formatter) {
+    formatter.append(&value, 1);
+    return FormattingResult::Success;
+  }
 }
 
 #endif

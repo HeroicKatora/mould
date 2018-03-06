@@ -5,8 +5,10 @@
 static constexpr char format[] = "Hello {d}{s}\n";
 
 int main() {
-  	constexpr auto formatter = mould::compile<format>();
-    std::string result = mould::format_constexpr(formatter, -42, ", your mouse is interesting");
+  std::ios_base::sync_with_stdio(false);
 
-    std::cout << result;
+  constexpr auto formatter = mould::compile<format>();
+  for(int i = 0; i<2000000;i++) {
+    std::cout << mould::format_constexpr(formatter, -42, ", your mouse is interesting");
+  }
 }
