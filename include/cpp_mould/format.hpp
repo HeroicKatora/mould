@@ -24,6 +24,7 @@ namespace mould {
   // implementation is found in "engine.hpp"
   class Formatter {
   public:
+    void append(char) const;
     void append(std::string) const;
     void append(const char*) const;
     void append(std::string_view) const;

@@ -30,6 +30,10 @@ namespace mould::internal {
 }
 
 namespace mould {
+  inline void Formatter::append(char arg) const {
+    engine.output.push_back(arg);
+  }
+
   inline void Formatter::append(std::string arg) const {
     engine.output.append(arg);
   }

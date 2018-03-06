@@ -15,9 +15,21 @@ namespace mould {
     return FormattingResult::Success;
   }
 
+  /* Standard implementation for char */
+  template<typename Choice>
+  constexpr AutoFormatting<AutoFormattingChoice::character> format_auto(char, Choice choice) {
+    return AutoFormatting<AutoFormattingChoice::character> { };
+  }
+
   template<typename Formatter>
-  FormattingResult format_string(char value, Formatter formatter) {
-    formatter.append(&value, 1);
+  FormattingResult format_string(const char value, Formatter formatter) {
+    formatter.append(value);
+    return FormattingResult::Success;
+  }
+
+  template<typename Formatter>
+  FormattingResult format_character(const char value, Formatter formatter) {
+    formatter.append(value);
     return FormattingResult::Success;
   }
 }
