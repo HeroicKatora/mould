@@ -18,7 +18,7 @@ namespace mould {
       return FormattingResult::Success;
     }
 
-    int length = pvalue < 0 ? 2 : 1;
+    int pre_length = (pvalue < 0 || formatter.format().sign != internal::Sign::Default) ? 1 : 0;
     // This convoluted mess avoids the failure on -MAX_INT
     const unsigned value = (pvalue < 0) ? (~static_cast<unsigned>(pvalue)) + static_cast<unsigned>(1) : pvalue;
 
@@ -26,24 +26,28 @@ namespace mould {
     constexpr static unsigned comparisons[] = // -INT_MIN = 2147483648
       {10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000 };
 
+    int val_length = 1;
     for(auto cmp : comparisons) {
-      length += (value >= cmp) ? 1 : 0;
+      val_length += (value >= cmp) ? 1 : 0;
     }
+    val_length = std::max(val_length, (int) formatter.format().width);
 
-    const auto view = formatter.reserve(length);
+    const auto view = formatter.reserve(pre_length + val_length);
 
     unsigned iterval = value;
     for(;;) {
-      if(iterval > 0) view[length - 1] = '0' + (iterval % 10);
-      if(iterval > 10) view[length - 2] = '0' + ((iterval/10) % 10);
-      if(iterval > 100) view[length - 2] = '0' + ((iterval/100) % 10);
-      if(iterval > 1000) view[length - 2] = '0' + ((iterval/1000) % 10);
+      if(iterval > 0) view[pre_length + val_length - 1] = '0' + (iterval % 10);
+      if(iterval > 10) view[pre_length + val_length - 2] = '0' + ((iterval/10) % 10);
+      if(iterval > 100) view[pre_length + val_length - 3] = '0' + ((iterval/100) % 10);
+      if(iterval > 1000) view[pre_length + val_length - 4] = '0' + ((iterval/1000) % 10);
       iterval /= 10000;
-      length -= 4;
-      if(iterval == 0) break;
+      val_length -= 4;
+      if(val_length <= 0) break;
     }
 
     if(pvalue < 0) view[0] = '-';
+    else if(formatter.format().sign == internal::Sign::Always) view[0] = '+';
+    else if(formatter.format().sign == internal::Sign::Pad) view[0] = ' ';
 
     return FormattingResult::Success;
   }
