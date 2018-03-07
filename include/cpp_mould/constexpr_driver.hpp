@@ -163,18 +163,16 @@ namespace mould::internal::constexpr_driver {
 
 namespace mould {
   template<typename Format, typename ... Arguments>
-  std::string format_constexpr(
+  void format_constexpr(
     Format& format_string,
+    std::string& output,
     Arguments&&... arguments)
   {
     using namespace internal::constexpr_driver;
 
-    std::string output;
     internal::Engine engine{output};
 
     eval<Format>(engine, arguments...);
-
-    return output;
   }
 }
 
