@@ -85,11 +85,12 @@ namespace mould::internal {
   constexpr bool consume_unsigned(Buffer<CharT>& inner, unsigned& target) {
     bool a_char = false;
     unsigned result = 0;
-    for(;;inner._begin++) {
+    for(;;) {
       const auto chr = *inner.begin();
       if(chr < '0' || chr > '9')
         break;
       result = result * 10 + (chr - '0');
+      inner._begin++;
       a_char = true;
     }
     target = result;
@@ -164,22 +165,22 @@ namespace mould::internal {
     FormatKind specified = FormatKind::Auto;
 
     switch(*inner.begin()) {
-    case 'b': specified = FormatKind::binary;
-    case 'c': specified = FormatKind::character;
-    case 'd': specified = FormatKind::decimal;
-    case 'e': specified = FormatKind::exponent;
-    case 'E': specified = FormatKind::EXPONENT;
-    case 'f': specified = FormatKind::fpoint;
-    case 'F': specified = FormatKind::FPOINT;
+    case 'b': specified = FormatKind::binary; break;
+    case 'c': specified = FormatKind::character; break;
+    case 'd': specified = FormatKind::decimal; break;
+    case 'e': specified = FormatKind::exponent; break;
+    case 'E': specified = FormatKind::EXPONENT; break;
+    case 'f': specified = FormatKind::fpoint; break;
+    case 'F': specified = FormatKind::FPOINT; break;
     // case 'g': return FormatKind:: | "G" | "n" |
     // Note: gGn are all similar to fpoint/decimal so I neglect them for now
     // Also, they do not appear in C and all formats should not be affected
     // by locale by design. Maybe this will get revisited later.
-    case 'o': specified = FormatKind::octal;
-    case 's': specified = FormatKind::string;
-    case 'p': specified = FormatKind::pointer;
-    case 'x': specified = FormatKind::hex;
-    case 'X': specified = FormatKind::HEX;
+    case 'o': specified = FormatKind::octal; break;
+    case 's': specified = FormatKind::string; break;
+    case 'p': specified = FormatKind::pointer; break;
+    case 'x': specified = FormatKind::hex; break;
+    case 'X': specified = FormatKind::HEX; break;
     // | "%" // FIXME: support percentage
     default:
       return;
