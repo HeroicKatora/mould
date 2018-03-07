@@ -82,28 +82,111 @@ namespace mould::internal {
   };
 
   template<typename CharT>
-  constexpr FormatKind get_format_kind(Buffer<CharT> inner_format) {
-    switch(inner_format.end()[-1]) {
-    case 'b': return FormatKind::binary;
-    case 'c': return FormatKind::character;
-    case 'd': return FormatKind::decimal;
-    case 'e': return FormatKind::exponent;
-    case 'E': return FormatKind::EXPONENT;
-    case 'f': return FormatKind::fpoint;
-    case 'F': return FormatKind::FPOINT;
+  constexpr bool consume_unsigned(Buffer<CharT>& inner, unsigned& target) {
+    bool a_char = false;
+    unsigned result = 0;
+    for(;;inner._begin++) {
+      const auto chr = *inner.begin();
+      if(chr < '0' || chr > '9')
+        break;
+      result = result * 10 + (chr - '0');
+      a_char = true;
+    }
+    target = result;
+    return a_char;
+  }
+
+  template<typename CharT>
+  constexpr void consume_index(Buffer<CharT>& inner, Formatting& target) {
+    unsigned index = 0;
+    if(consume_unsigned(inner, index)) {
+      if(index < 0x100) {
+        target.format.index = InlineValue::Immediate;
+        target.index = index;
+      }
+    }
+    if(*inner.begin() == ':')
+      inner._begin++;
+  }
+
+  template<typename CharT>
+  constexpr void consume_align(Buffer<CharT>& inner, Formatting& target) {
+    Alignment specified = Alignment::Default;
+    switch(*inner.begin()) {
+    case '<': specified = Alignment::Left; break;
+    case '>': specified = Alignment::Right; break;
+    case '=': specified = Alignment::Default; break;
+    case '^': specified = Alignment::Center; break;
+    default:
+      return;
+    }
+    target.format.alignment = specified;
+    inner._begin++;
+  }
+
+  template<typename CharT>
+  constexpr void consume_sign(Buffer<CharT>& inner, Formatting& target) {
+    Sign specified = Sign::Default;
+    switch(*inner.begin()) {
+    case '+': specified = Sign::Always; break;
+    case '-': specified = Sign::Default; break;
+    case ' ': specified = Sign::Pad; break;
+    default:
+      return;
+    }
+    inner._begin++;
+    target.format.sign = specified;
+  }
+
+  template<typename CharT>
+  constexpr void consume_width(Buffer<CharT>& inner, Formatting& target) {
+    unsigned specified = 0;
+    if(!consume_unsigned(inner, specified))
+      return;
+    target.format.width = InlineValue::Immediate;
+    target.width = specified;
+  }
+
+  template<typename CharT>
+  constexpr void consume_precision(Buffer<CharT>& inner, Formatting& target) {
+    if(*inner.begin() != '.')
+      return;
+    inner._begin++;
+    unsigned specified = 0;
+    if(!consume_unsigned(inner, specified))
+      return;
+    target.format.precision = InlineValue::Immediate;
+    target.precision = specified;
+  }
+
+  template<typename CharT>
+  constexpr void consume_kind(Buffer<CharT>& inner, Formatting& target) {
+    FormatKind specified = FormatKind::Auto;
+
+    switch(*inner.begin()) {
+    case 'b': specified = FormatKind::binary;
+    case 'c': specified = FormatKind::character;
+    case 'd': specified = FormatKind::decimal;
+    case 'e': specified = FormatKind::exponent;
+    case 'E': specified = FormatKind::EXPONENT;
+    case 'f': specified = FormatKind::fpoint;
+    case 'F': specified = FormatKind::FPOINT;
     // case 'g': return FormatKind:: | "G" | "n" |
     // Note: gGn are all similar to fpoint/decimal so I neglect them for now
     // Also, they do not appear in C and all formats should not be affected
     // by locale by design. Maybe this will get revisited later.
-    case 'o': return FormatKind::octal;
-    case 's': return FormatKind::string;
-    case 'p': return FormatKind::pointer;
-    case 'x': return FormatKind::hex;
-    case 'X': return FormatKind::HEX;
+    case 'o': specified = FormatKind::octal;
+    case 's': specified = FormatKind::string;
+    case 'p': specified = FormatKind::pointer;
+    case 'x': specified = FormatKind::hex;
+    case 'X': specified = FormatKind::HEX;
     // | "%" // FIXME: support percentage
     default:
-      return FormatKind::Auto;
+      return;
     }
+
+    inner._begin++;
+    target.format.kind = specified;
   }
 
   template<typename CharT>
@@ -156,9 +239,13 @@ namespace mould::internal {
     if(format_buffer.length() > 2)
       builder.set_formatting(Formatting{});
 
-    const Buffer<CharT> inner_format = {format_buffer._begin + 1, format_buffer._end - 1};
-
-    builder.format.format.kind = get_format_kind(inner_format);
+    Buffer<CharT> inner_format = {format_buffer._begin + 1, format_buffer._end - 1};
+    consume_index(inner_format, builder.format);
+    consume_align(inner_format, builder.format);
+    consume_sign(inner_format, builder.format);
+    consume_width(inner_format, builder.format);
+    consume_precision(inner_format, builder.format);
+    consume_kind(inner_format, builder.format);
 
     format.buffer = format_buffer;
     format.operation = builder.Build();
