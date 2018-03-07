@@ -84,7 +84,7 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
       switch(operation.formatting.format.kind) {
       case FormatKind::Auto: info.function = TypedFormatter<T>::automatic;
 #define CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH(kind) \
-      case FormatKind:: kind : info.function = TypedFormatter<T>:: kind;
+      case FormatKind:: kind : info.function = TypedFormatter<T>:: kind; break;
 
       CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH)
 #undef CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH

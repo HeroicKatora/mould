@@ -1,12 +1,9 @@
 #include <iostream>
 #include <iterator>
 
-#include <cpp_mould/compile.hpp>
-#include <cpp_mould/debug.hpp>
+#include <cpp_mould.hpp>
 
-using namespace mould;
-
-static constexpr char format[] = "Hello {s}\n";
+static constexpr char format[] = "{:0.10f}:{:04d}:{:+}:{:s}:{:p}:{:c}:%\n";
 
 template<typename Formatter>
 auto dump_bytecode(const Formatter& formatter) {
@@ -21,12 +18,14 @@ auto dump_bytecode(const Formatter& formatter) {
 }
 
 int main() {
-  constexpr auto formatter = compile<format>();
+  constexpr auto formatter = mould::compile<format>();
 
   dump_bytecode(formatter);
 
-  auto description = descriptor(formatter);
+  auto description = mould::descriptor(formatter);
   while(description) {
     std::cout << *description << "\n";
   }
+
+  static_assert(mould::internal::TypedFormatter<void*>::pointer != nullptr);
 }

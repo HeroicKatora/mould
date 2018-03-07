@@ -17,10 +17,11 @@ namespace mould::internal::constexpr_driver {
   struct TypedArgumentExpression {
     int argument_index;
     FormattingResult (*function)(const T&, Formatter);
+    FormatKind kind;
 
     constexpr TypedArgumentExpression initialize(FullOperation operation) {
       const auto info = TypedFormatterInformation<T>::get(operation);
-      return { argument_index, info.function };
+      return { argument_index, info.function, operation.formatting.format.kind };
     }
   };
 
@@ -128,7 +129,14 @@ namespace mould::internal::constexpr_driver {
     {
       constexpr auto& expression = std::get<index>(CompiledExpressions<Format, Arguments...>.expressions);
       constexpr auto fn = expression.function;
-      static_assert(fn != nullptr, "Requested formatting not implemented");
+#define CPP_MOULD_CONSTEXPR_EVAL_ASSERT(fkind) \
+      if constexpr(expression.kind == FormatKind:: fkind) { \
+        static_assert(fn != nullptr, "Requested " #fkind "formatting not implemented"); \
+      } 
+
+      CPP_MOULD_CONSTEXPR_EVAL_ASSERT(Auto)
+      CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_CONSTEXPR_EVAL_ASSERT)
+#undef CPP_MOULD_CONSTEXPR_EVAL_ASSERT
       const auto& argument = std::get<ExpressionData<Format>.indices[index]>(std::tie(args...));
       ::mould::Format format {
         0, 10, 0, Alignment::Default, Sign::Default
