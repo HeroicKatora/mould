@@ -33,7 +33,9 @@ namespace mould {
     // may fail, in which case a 0-length buffer is returned.
     char* reserve(size_t length) const;
 
-    Format& format() const;
+    inline const Format& format() const {
+      return _format;
+    }
 
     constexpr Formatter(internal::Engine& engine, Format format)
       : engine(engine), _format(format)

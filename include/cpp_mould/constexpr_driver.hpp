@@ -130,7 +130,7 @@ namespace mould::internal::constexpr_driver {
       constexpr auto fn = expression.function;
       const auto& argument = std::get<ExpressionData<Format>.indices[index]>(std::tie(args...));
       ::mould::Format format {
-        0, 0, 0, Alignment::Default, Sign::Default
+        0, 10, 0, Alignment::Default, Sign::Default
       };
       fn(argument, ::mould::Formatter{context.engine, format});
     }

@@ -1,5 +1,7 @@
 #ifndef CPP_MOULD_ARGUMENTS_FLOAT_HPP
 #define CPP_MOULD_ARGUMENTS_FLOAT_HPP
+#include <cstdio>
+
 #include "../format.hpp"
 
 namespace mould {
@@ -11,6 +13,10 @@ namespace mould {
 
   template<typename Formatter>
   FormattingResult format_fpoint(const float& value, Formatter formatter) {
+    char buffer[100];
+    if(0 > std::snprintf(buffer, 100, "%*.*f", (int) formatter.format().width, (int) formatter.format().precision, value))
+      return FormattingResult::Error;
+    formatter.append(buffer);
     return FormattingResult::Success;
   }
 
@@ -22,6 +28,10 @@ namespace mould {
 
   template<typename Formatter>
   FormattingResult format_fpoint(const double& value, Formatter formatter) {
+    char buffer[100];
+    if(0 > std::snprintf(buffer, 100, "%*.*f", (int) formatter.format().width, (int) formatter.format().precision, value))
+      return FormattingResult::Error;
+    formatter.append(buffer);
     return FormattingResult::Success;
   }
 }
