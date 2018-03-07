@@ -131,7 +131,7 @@ namespace mould::internal::constexpr_driver {
       constexpr auto fn = expression.function;
 #define CPP_MOULD_CONSTEXPR_EVAL_ASSERT(fkind) \
       if constexpr(expression.kind == FormatKind:: fkind) { \
-        static_assert(fn != nullptr, "Requested " #fkind "formatting not implemented"); \
+        static_assert(fn != nullptr, "Requested formatting (" #fkind ") not implemented"); \
       } 
 
       CPP_MOULD_CONSTEXPR_EVAL_ASSERT(Auto)
