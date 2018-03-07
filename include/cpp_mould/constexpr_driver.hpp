@@ -19,8 +19,8 @@ namespace mould::internal::constexpr_driver {
     FormattingResult (*function)(const T&, Formatter);
 
     constexpr TypedArgumentExpression initialize(FullOperation operation) {
-      static_assert(TypedFormatter<T>::automatic != nullptr);
-      return { argument_index, TypedFormatter<T>::automatic };
+      const auto info = TypedFormatterInformation<T>::get(operation);
+      return { argument_index, info.function };
     }
   };
 
@@ -128,6 +128,7 @@ namespace mould::internal::constexpr_driver {
     {
       constexpr auto& expression = std::get<index>(CompiledExpressions<Format, Arguments...>.expressions);
       constexpr auto fn = expression.function;
+      static_assert(fn != nullptr, "Requested formatting not implemented");
       const auto& argument = std::get<ExpressionData<Format>.indices[index]>(std::tie(args...));
       ::mould::Format format {
         0, 10, 0, Alignment::Default, Sign::Default

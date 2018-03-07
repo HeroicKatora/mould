@@ -73,6 +73,26 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
 #undef CPP_MOULD_TYPED_CONSTEXPR
   };
 
+  /* Specialization point for addition information. Every type that should be formatted 
+   * MUST provide an implemenation of this.
+   */
+  template<typename T>
+  struct TypedFormatterInformation {
+    typename TypedFormatter<T>::formatting_function function;
+    constexpr static TypedFormatterInformation get(FullOperation operation) {
+      TypedFormatterInformation<T> info = {};
+      switch(operation.formatting.format.kind) {
+      case FormatKind::Auto: info.function = TypedFormatter<T>::automatic;
+#define CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH(kind) \
+      case FormatKind:: kind : info.function = TypedFormatter<T>:: kind;
+
+      CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH)
+#undef CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH
+      }
+      return info;
+    }
+  };
+
   template<typename T>
   struct type_erase_function {
 #define CPP_MOULD_TYPE_ERASED_FORMAT(kind) \
