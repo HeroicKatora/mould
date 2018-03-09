@@ -29,21 +29,31 @@ namespace mould {
   template<typename Formatter>
   FormattingResult format_string(double value, Formatter formatter) {
     char buffer[100];
+
     auto format = formatter.format();
+    int length;
     if(!format.has_width && !format.has_precision) {
-      if(0 > std::snprintf(buffer, 100, "%g", value))
+      if(0 > (length = std::snprintf(buffer, 100, "% g", value)))
         return FormattingResult::Error;
     } else if(format.has_width && !format.has_precision) {
-      if(0 > std::snprintf(buffer, 100, "%*g", (int) format.width + 3, value))
+      if(0 > (length = std::snprintf(buffer, 100, "% *g", (int) format.width + 3, value)))
         return FormattingResult::Error;
     } else if(!format.has_width && format.has_precision) {
-      if(0 > std::snprintf(buffer, 100, "%.*g", (int) format.precision + 4, value))
+      if(0 > (length = std::snprintf(buffer, 100, "% .*g", (int) format.precision + 4, value)))
         return FormattingResult::Error;
     } else {
-      if(0 > std::snprintf(buffer, 100, "%*.*g", (int) format.width + 8, (int) format.precision + 6, value))
+      if(0 > (length = std::snprintf(buffer, 100, "% *.*g", (int) format.width + 8, (int) format.precision + 6, value)))
         return FormattingResult::Error;
     }
-    formatter.append(buffer);
+
+    if(formatter.format().sign == internal::Sign::Always && value >= 0)
+      buffer[0] = '+';
+
+    const auto important_buffer
+      = (formatter.format().sign == internal::Sign::Default && value >= 0)
+      ? std::string_view{buffer + 1, (unsigned) length - 1}
+      : std::string_view{buffer, (unsigned) length};
+    formatter.append(important_buffer);
     return FormattingResult::Success;
   }
 
