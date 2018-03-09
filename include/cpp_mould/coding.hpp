@@ -258,7 +258,6 @@ namespace mould::internal {
       if(arg == FormatArgument::Parameter && value < 256)
         return InlineValue::Parameter;
 
-      throw "Parameter indices can only go to 255";
     }
 
     constexpr static FormatArgument _determine_argument_kind(InlineValue value_kind) {
