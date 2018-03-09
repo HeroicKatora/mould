@@ -13,20 +13,19 @@ namespace mould {
     char buffer[sizeof(void*)*2 + 3] = {};
 
     size_t asint = (size_t) ptr;
-    size_t shft = sizeof(void*)*8 -4;
     
-    int begin_index = 2*sizeof(void*) + 3;
-    for(int i = 0; i < 2*sizeof(void*); i++) {
-        auto chr = ((asint >> shft) & 0xF);
-        if(chr != 0) begin_index = std::min(begin_index, i);
+    int begin_index = 2*sizeof(void*) + 2;
+    for(int i = 2*sizeof(void*) - 1; i >= 0; i--) {
+        auto chr = asint & 0xF;
+        if(chr != 0) begin_index = i;
         buffer[2+i] = chr < 10 ? '0' + chr : 'a' + chr - 10;
-        shft -= 4;
+        asint >>= 4;
     }
 
     buffer[begin_index] = '0';
     buffer[begin_index + 1] = 'x';
 
-    formatter.append(buffer + begin_index);
+    formatter.append(std::string_view{buffer + begin_index, 2*sizeof(void*) + 3 - begin_index});
     
     return FormattingResult::Success;
   }
