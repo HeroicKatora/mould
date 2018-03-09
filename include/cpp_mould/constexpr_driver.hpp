@@ -157,9 +157,9 @@ namespace mould::internal::constexpr_driver {
         get_value<formatting.padding, formatting.padding_value>(args...),
 
         // flags
-        formatting.width == FormatArgument::Auto,
-        formatting.precision == FormatArgument::Auto,
-        formatting.padding == FormatArgument::Auto,
+        formatting.width != FormatArgument::Auto,
+        formatting.precision != FormatArgument::Auto,
+        formatting.padding != FormatArgument::Auto,
 
         formatting.alignment,
         formatting.sign

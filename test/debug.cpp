@@ -26,8 +26,4 @@ int main() {
   while(description) {
     std::cout << *description << "\n";
   }
-
-  static_assert(mould::internal::TypedFormatter<void*>::pointer != nullptr);
-  static_assert(mould::internal::TypedFormatter<double>::automatic
-      == mould::internal::uniq_fpoint_formatter<double>);
 }
