@@ -100,28 +100,27 @@ namespace mould::internal {
         break;
       case OpCode::Insert: {
           auto& formatting = latest.formatting;
-          auto& description = formatting.format;
 
-          auto& argument = args_begin[formatting.index];
-          auto formatting_fn = argument.formatter_for(description.kind);
+          auto& argument = args_begin[formatting.index_value];
+          auto formatting_fn = argument.formatter_for(formatting.kind);
 
           if(!formatting_fn)
             return DriverResult {
               DriverResultType::UnsupportedFormatting,
-              description.kind
+              formatting.kind
             };
 
           auto format = Format {
-            formatting.width,
-            formatting.precision,
-            formatting.padding,
+            formatting.width_value,
+            formatting.precision_value,
+            formatting.padding_value,
 
-            formatting.format.width == InlineValue::Auto,
-            formatting.format.precision == InlineValue::Auto,
-            formatting.format.padding == InlineValue::Auto,
+            formatting.width == FormatArgument::Auto,
+            formatting.precision == FormatArgument::Auto,
+            formatting.padding == FormatArgument::Auto,
             
-            description.alignment,
-            description.sign
+            formatting.alignment,
+            formatting.sign
           };
 
           Formatter formatter {engine, format};
@@ -129,7 +128,7 @@ namespace mould::internal {
           if(result == FormattingResult::Error)
             return DriverResult {
               DriverResultType::FormattingError,
-              description.kind
+              formatting.kind
             };
         } break;
       }

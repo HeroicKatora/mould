@@ -218,23 +218,81 @@ namespace mould::internal {
     }
   };
 
-  struct Formatting {
-    FormatDescription format;
+  enum struct FormatArgument {
+    Auto,
+    Value,
+    Parameter,
+  };
 
-    Immediate width, precision, padding;
-    Codepoint index;
+  struct Formatting {
+    FormatKind kind;
+
+    FormatArgument width;
+    FormatArgument precision;
+    FormatArgument padding;
+    Alignment alignment;
+    Sign sign;
+    FormatArgument index;
+
+    Immediate width_value;
+    Immediate precision_value;
+    Immediate padding_value;
+    Codepoint index_value;
 
     constexpr Formatting()
-      : format{FormatDescription::Uninitialized()},
-      width{}, precision{}, padding{}, index{}
-      { }
+      : kind(FormatKind::Auto), width(FormatArgument::Auto), precision(FormatArgument::Auto),
+      padding(FormatArgument::Auto), alignment(Alignment::Default), sign(Sign::Default),
+      index(FormatArgument::Auto), width_value(), precision_value(), padding_value(), index_value()
+    { }
+
+    constexpr static InlineValue _determine_value_kind(FormatArgument arg, Immediate value) {
+      if(arg == FormatArgument::Auto)
+        return InlineValue::Auto;
+      
+      if(arg == FormatArgument::Value && value < 256)
+        return InlineValue::Inline;
+      else if(arg == FormatArgument::Value)
+        return InlineValue::Immediate;
+      
+      if(arg == FormatArgument::Parameter && value < 256)
+        return InlineValue::Parameter;
+
+      throw "Parameter indices can only go to 255";
+    }
+
+    constexpr static FormatArgument _determine_argument_kind(InlineValue value_kind) {
+      switch(value_kind) {
+      case InlineValue::Auto: return FormatArgument::Auto;
+      case InlineValue::Immediate: return FormatArgument::Value;
+      case InlineValue::Inline: return FormatArgument::Value;
+      case InlineValue::Parameter: return FormatArgument::Parameter;
+      }
+    }
 
     constexpr EncodedFormatting compress() const {
-      auto final_format = format;
+      FormatDescription final_format = {};
+
+      final_format.kind = kind;
+
+      final_format.width = _determine_value_kind(width, width_value);
+      final_format.precision = _determine_value_kind(precision, precision_value);
+      final_format.padding = _determine_value_kind(padding, padding_value);
+
+      final_format.alignment = alignment;
+      final_format.sign = sign;
+      final_format.index = index == FormatArgument::Auto ? InlineValue::Auto : InlineValue::Inline;
 
       unsigned char used_inlines = 0;
-      if(format.index == InlineValue::Inline)
-        final_format.inlines[used_inlines++] = index;
+
+      if(final_format.width == InlineValue::Inline || final_format.width == InlineValue::Parameter)
+        final_format.inlines[used_inlines++] = (Codepoint) width_value;
+      if(final_format.precision == InlineValue::Inline || final_format.precision == InlineValue::Parameter)
+        final_format.inlines[used_inlines++] = (Codepoint) precision_value;
+      if(final_format.padding == InlineValue::Inline || final_format.padding == InlineValue::Parameter)
+        final_format.inlines[used_inlines++] = (Codepoint) padding_value;
+
+      if(final_format.index == InlineValue::Inline /* Parameter is not (yet) allowed */)
+        final_format.inlines[used_inlines++] = index_value;
 
       EncodedFormatting compressed = {};
 
@@ -242,11 +300,11 @@ namespace mould::internal {
       compressed.append_immediate(encoded_format.encoded);
 
       if(final_format.width == InlineValue::Immediate)
-        compressed.append_immediate(width);
+        compressed.append_immediate(width_value);
       if(final_format.precision == InlineValue::Immediate)
-        compressed.append_immediate(precision);
+        compressed.append_immediate(precision_value);
       if(final_format.padding == InlineValue::Immediate)
-        compressed.append_immediate(padding);
+        compressed.append_immediate(padding_value);
 
       return compressed;
     }
@@ -263,47 +321,51 @@ namespace mould::internal {
         return ReadStatus::MissingFormatImmediate;
       }
 
-      decoded.format = format.FullDescription();
+      auto decoded_format = format.FullDescription();
 
-      switch(format.width()) {
+      decoded.width = _determine_argument_kind(decoded_format.width);
+      switch(decoded_format.width) {
       case InlineValue::Immediate:
-        if(!(immediates >> decoded.width))
+        if(!(immediates >> decoded.width_value))
           return ReadStatus::MissingWidth;
         break;
       case InlineValue::Inline: [[fallthrough]];
       case InlineValue::Parameter:
-        decoded.width = format.inline_value(inline_index++);
+        decoded.width_value = format.inline_value(inline_index++);
       case InlineValue::Auto:
         break;
       }
 
-      switch(format.precision()) {
+      decoded.precision = _determine_argument_kind(decoded_format.precision);
+      switch(decoded_format.precision) {
       case InlineValue::Immediate:
-        if(!(immediates >> decoded.precision))
+        if(!(immediates >> decoded.precision_value))
           return ReadStatus::MissingPrecision;
         break;
       case InlineValue::Inline: [[fallthrough]];
       case InlineValue::Parameter:
-        decoded.precision = format.inline_value(inline_index++);
+        decoded.precision_value = format.inline_value(inline_index++);
       case InlineValue::Auto:
         break;
       }
 
-      switch(format.padding()) {
+      decoded.padding = _determine_argument_kind(decoded_format.padding);
+      switch(decoded_format.padding) {
       case InlineValue::Immediate:
-        if(!(immediates >> decoded.padding))
+        if(!(immediates >> decoded.padding_value))
           return ReadStatus::MissingPadding;
         break;
       case InlineValue::Inline: [[fallthrough]];
       case InlineValue::Parameter:
-        decoded.padding = format.inline_value(inline_index++);
+        decoded.padding_value = format.inline_value(inline_index++);
       case InlineValue::Auto:
         break;
       }
 
-      switch(format.index()) {
+      decoded.index = _determine_argument_kind(decoded_format.index);
+      switch(decoded_format.index) {
       case InlineValue::Inline:
-        decoded.index = format.inline_value(inline_index++);
+        decoded.index_value = format.inline_value(inline_index++);
       case InlineValue::Auto:
         break;
       default:
@@ -383,10 +445,10 @@ namespace mould::internal {
     case OpCode::Insert:
       if((status = imm_buffer >> latest.formatting) != ReadStatus::NoError)
         return latest;
-      if(latest.formatting.format.index == InlineValue::Auto)
-        latest.formatting.index = auto_index++;
+      if(latest.formatting.index == FormatArgument::Auto)
+        latest.formatting.index_value = auto_index++;
       else
-        auto_index = std::max(auto_index, latest.formatting.index + 1);
+        auto_index = std::max(auto_index, latest.formatting.index_value + 1);
       break;
     case OpCode::Literal:
       if((status = imm_buffer >> latest.literal) != ReadStatus::NoError)

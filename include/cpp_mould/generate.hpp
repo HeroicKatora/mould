@@ -102,8 +102,8 @@ namespace mould::internal {
     unsigned index = 0;
     if(consume_unsigned(inner, index)) {
       if(index < 0x100) {
-        target.format.index = InlineValue::Immediate;
-        target.index = index;
+        target.index = FormatArgument::Value;
+        target.index_value = index;
       }
     }
     if(*inner.begin() == ':')
@@ -121,7 +121,7 @@ namespace mould::internal {
     default:
       return;
     }
-    target.format.alignment = specified;
+    target.alignment = specified;
     inner._begin++;
   }
 
@@ -136,7 +136,7 @@ namespace mould::internal {
       return;
     }
     inner._begin++;
-    target.format.sign = specified;
+    target.sign = specified;
   }
 
   template<typename CharT>
@@ -144,8 +144,8 @@ namespace mould::internal {
     unsigned specified = 0;
     if(!consume_unsigned(inner, specified))
       return;
-    target.format.width = InlineValue::Immediate;
-    target.width = specified;
+    target.width = FormatArgument::Value;
+    target.width_value = specified;
   }
 
   template<typename CharT>
@@ -156,8 +156,8 @@ namespace mould::internal {
     unsigned specified = 0;
     if(!consume_unsigned(inner, specified))
       return;
-    target.format.precision = InlineValue::Immediate;
-    target.precision = specified;
+    target.precision = FormatArgument::Value;
+    target.precision_value = specified;
   }
 
   template<typename CharT>
@@ -187,7 +187,7 @@ namespace mould::internal {
     }
 
     inner._begin++;
-    target.format.kind = specified;
+    target.kind = specified;
   }
 
   template<typename CharT>

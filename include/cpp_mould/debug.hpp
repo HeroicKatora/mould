@@ -56,6 +56,14 @@ namespace mould::internal {
     }
   }
 
+  constexpr const char* describe(FormatArgument kind) {
+    switch(kind) {
+    case FormatArgument::Auto: return "Auto";
+    case FormatArgument::Value: return "Value";
+    case FormatArgument::Parameter: return "Parameter";
+    }
+  }
+
   constexpr const char* describe(Alignment align) {
     switch(align) {
     case Alignment::Default: return "Default";
@@ -92,17 +100,17 @@ namespace mould::internal {
     case OpCode::Insert: {
       std::stringstream description(std::string{});
       description << "Insert: format (" << describe(latest.operation.operation.insert_format);
-      description << ") index (" << describe(latest.formatting.format.index)
-                  << ", " << (int) latest.formatting.index;
-      description << ") kind (" << describe(latest.formatting.format.kind);
-      description << ") width (" << describe(latest.formatting.format.width)
-                  << ", " << latest.formatting.width;
-      description << ") precision (" << describe(latest.formatting.format.precision)
-                  << ", " << latest.formatting.precision;
-      description << ") padding (" << describe(latest.formatting.format.padding)
-                  << ", " << latest.formatting.padding;
-      description << ") alignment (" << describe(latest.formatting.format.alignment);
-      description << ") sign (" << describe(latest.formatting.format.sign);
+      description << ") index (" << describe(latest.formatting.index)
+                  << ", " << (int) latest.formatting.index_value;
+      description << ") kind (" << describe(latest.formatting.kind);
+      description << ") width (" << describe(latest.formatting.width)
+                  << ", " << latest.formatting.width_value;
+      description << ") precision (" << describe(latest.formatting.precision)
+                  << ", " << latest.formatting.precision_value;
+      description << ") padding (" << describe(latest.formatting.padding)
+                  << ", " << latest.formatting.padding_value;
+      description << ") alignment (" << describe(latest.formatting.alignment);
+      description << ") sign (" << describe(latest.formatting.sign);
       description << ")";
       return description.str();
     }

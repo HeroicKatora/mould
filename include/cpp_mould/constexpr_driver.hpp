@@ -44,7 +44,7 @@ namespace mould::internal::constexpr_driver {
     while(!iterator.code_buffer.empty()) {
       auto op = *iterator;
       if(op.operation.operation.type == OpCode::Insert) {
-        *output_ptr++ = op.formatting.index;
+        *output_ptr++ = op.formatting.index_value;
       } else {
         *output_ptr++ = -1;
       }
@@ -120,11 +120,11 @@ namespace mould::internal::constexpr_driver {
     }
   };
 
-  template<InlineValue type, Immediate value, typename ... Arguments>
+  template<FormatArgument type, Immediate value, typename ... Arguments>
   constexpr Immediate get_value(const Arguments& ... args) {
-    if constexpr(type == InlineValue::Auto) {
+    if constexpr(type == FormatArgument::Auto) {
       return 0;
-    } else if constexpr(type == InlineValue::Parameter) {
+    } else if constexpr(type == FormatArgument::Parameter) {
       return std::get<value>(std::tie(args...));
     } else {
       return value;
@@ -142,7 +142,7 @@ namespace mould::internal::constexpr_driver {
       constexpr auto& formatting = expression.operation.formatting;
       constexpr auto fn = expression.function;
 #define CPP_MOULD_CONSTEXPR_EVAL_ASSERT(fkind) \
-      if constexpr(formatting.format.kind == FormatKind:: fkind) { \
+      if constexpr(formatting.kind == FormatKind:: fkind) { \
         static_assert(fn != nullptr, "Requested formatting (" #fkind ") not implemented"); \
       } 
 
@@ -152,17 +152,17 @@ namespace mould::internal::constexpr_driver {
       const auto& argument = std::get<ExpressionData<Format>.indices[index]>(std::tie(args...));
       ::mould::Format format {
         // values
-        get_value<formatting.format.width, formatting.width>(args...),
-        get_value<formatting.format.precision, formatting.precision>(args...),
-        get_value<formatting.format.padding, formatting.padding>(args...),
+        get_value<formatting.width, formatting.width_value>(args...),
+        get_value<formatting.precision, formatting.precision_value>(args...),
+        get_value<formatting.padding, formatting.padding_value>(args...),
 
         // flags
-        formatting.format.width == InlineValue::Auto,
-        formatting.format.precision == InlineValue::Auto,
-        formatting.format.padding == InlineValue::Auto,
+        formatting.width == FormatArgument::Auto,
+        formatting.precision == FormatArgument::Auto,
+        formatting.padding == FormatArgument::Auto,
 
-        formatting.format.alignment,
-        formatting.format.sign
+        formatting.alignment,
+        formatting.sign
       };
       fn(argument, ::mould::Formatter{context.engine, format});
     }
