@@ -88,7 +88,7 @@ namespace mould::internal {
     constexpr EncodedFormatDescription(FormatDescription format)
       : encoded(0)
     {
-      for(int i = 5; i >= 0; i--) encoded = (encoded|format.inlines[i]) << 8;
+      for(int i = 5; i >= 0; i--) encoded = (encoded << 8)|format.inlines[i];
       encoded = encoded << 16;
 
       encoded |= (static_cast<unsigned char>(format.kind) & Immediate{0xF});
@@ -250,7 +250,7 @@ namespace mould::internal {
       if(arg == FormatArgument::Auto)
         return InlineValue::Auto;
       
-      if(arg == FormatArgument::Value && value < 256 && false)
+      if(arg == FormatArgument::Value && value < 256)
         return InlineValue::Inline;
       else if(arg == FormatArgument::Value)
         return InlineValue::Immediate;
