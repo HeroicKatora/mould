@@ -8,11 +8,20 @@ namespace mould {
   // Interface definition of a format. The values are already recovered from
   // immediates or the input arguments and the kind is resolved.
   struct Format {
-    internal::Immediate width;
-    internal::Immediate precision;
-    internal::Immediate padding;
-    internal::Alignment alignment;
-    internal::Sign sign;
+    using Number = internal::Immediate;
+    using Alignment = internal::Alignment;
+    using Sign = internal::Sign;
+
+    Number width /* The width specified in the format */;
+    Number precision /* The precision specified in the format */;
+    Number padding /* The charcode of the character specified as padding */;
+
+    bool has_width /* If no width was given, this is false and `width` is 0 */;
+    bool has_precision /* If no precision was given, this is false and `precision` is 0 */;
+    bool has_padding /* If padding was specified, `padding` is 0 otherwise */;
+    
+    Alignment alignment;
+    Sign sign;
   };
 
   // Forward declaration to the type defined in "engine.hpp"

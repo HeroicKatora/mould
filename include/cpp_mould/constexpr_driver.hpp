@@ -120,6 +120,17 @@ namespace mould::internal::constexpr_driver {
     }
   };
 
+  template<InlineValue type, Immediate value, typename ... Arguments>
+  constexpr Immediate get_value(const Arguments& ... args) {
+    if constexpr(type == InlineValue::Auto) {
+      return 0;
+    } else if constexpr(type == InlineValue::Parameter) {
+      return std::get<value>(std::tie(args...));
+    } else {
+      return value;
+    }
+  }
+
   template<typename T>
   struct Eval<TypedArgumentExpression<T>> {
     template<typename Format, size_t index, typename ... Arguments>
@@ -140,9 +151,16 @@ namespace mould::internal::constexpr_driver {
 #undef CPP_MOULD_CONSTEXPR_EVAL_ASSERT
       const auto& argument = std::get<ExpressionData<Format>.indices[index]>(std::tie(args...));
       ::mould::Format format {
-        formatting.width,
-        formatting.precision,
-        formatting.padding,
+        // values
+        get_value<formatting.format.width, formatting.width>(args...),
+        get_value<formatting.format.precision, formatting.precision>(args...),
+        get_value<formatting.format.padding, formatting.padding>(args...),
+
+        // flags
+        formatting.format.width == InlineValue::Auto,
+        formatting.format.precision == InlineValue::Auto,
+        formatting.format.padding == InlineValue::Auto,
+
         formatting.format.alignment,
         formatting.format.sign
       };

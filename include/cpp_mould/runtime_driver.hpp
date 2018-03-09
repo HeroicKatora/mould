@@ -115,6 +115,11 @@ namespace mould::internal {
             formatting.width,
             formatting.precision,
             formatting.padding,
+
+            formatting.format.width == InlineValue::Auto,
+            formatting.format.precision == InlineValue::Auto,
+            formatting.format.padding == InlineValue::Auto,
+            
             description.alignment,
             description.sign
           };
