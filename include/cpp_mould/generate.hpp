@@ -142,6 +142,10 @@ namespace mould::internal {
   template<typename CharT>
   constexpr void consume_width(Buffer<CharT>& inner, Formatting& target) {
     unsigned specified = 0;
+    if(*inner.begin() == '0' && target.padding == FormatArgument::Auto) {
+      target.padding = FormatArgument::Value;
+      target.padding_value = '0';
+    }
     if(!consume_unsigned(inner, specified))
       return;
     target.width = FormatArgument::Value;
