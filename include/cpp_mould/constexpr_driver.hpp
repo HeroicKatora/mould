@@ -111,7 +111,7 @@ namespace mould::internal::constexpr_driver {
     template<typename Format, size_t index, typename ... Arguments>
     static inline auto evaluate(
       const ExpressionContext& context,
-      const Arguments& ... args) 
+      Arguments& ... args) 
     {
       constexpr auto& expression = std::get<index>(CompiledExpressions<Format, Arguments...>.expressions);
       context.engine.append(
@@ -136,7 +136,7 @@ namespace mould::internal::constexpr_driver {
     template<typename Format, size_t index, typename ... Arguments>
     static inline auto evaluate(
       const ExpressionContext& context,
-      const Arguments& ... args)
+      Arguments& ... args)
     {
       constexpr auto& expression = std::get<index>(CompiledExpressions<Format, Arguments...>.expressions);
       constexpr auto& formatting = expression.operation.formatting;
@@ -174,14 +174,14 @@ namespace mould::internal::constexpr_driver {
   };
 
   template<typename Format, typename ... Arguments, size_t ... Indices>
-  inline auto _eval(ExpressionContext context, std::index_sequence<Indices...>, const Arguments& ... args) {
+  inline auto _eval(ExpressionContext context, std::index_sequence<Indices...>, Arguments& ... args) {
     using Compiled = decltype(CompiledExpressions<Format, Arguments...>);
     Ignore ignore{(Eval<typename Compiled::template ExpressionType<Indices>>::template evaluate<Format, Indices>(
       context, args...), 0) ...};
   }
 
   template<typename Format, typename ... Arguments>
-  inline auto eval(Engine engine, const Arguments& ... args) {
+  inline auto eval(Engine engine, Arguments ... args) {
     ExpressionContext context {
       engine,
       Format::data.format_buffer()

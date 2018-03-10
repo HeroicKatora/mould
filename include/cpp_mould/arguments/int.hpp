@@ -14,7 +14,7 @@ namespace mould {
   template<typename Formatter>
   FormattingResult format_decimal(const int& pvalue, Formatter formatter) {
     if(pvalue == 0) {
-      formatter.append("0");
+      formatter.append('0');
       return FormattingResult::Success;
     }
 
