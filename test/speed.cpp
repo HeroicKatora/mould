@@ -12,7 +12,7 @@ int main() {
 	for(int i = 0; i < 2000000; i++) {
 		/* Format equivalent to "%0.10f:%04d:%+g:%s:%p:%c:%%\n" */
 		mould::format_constexpr(formatter, output,
-			1.234, 42, 3.13, "str", (void*)1000, 'X');
+			1.234d, 42, 3.13d, "str", (void*)1000, 'X');
 		std::cout.write(output.data(), output.size());
 		output.clear();
 	}

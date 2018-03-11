@@ -8,21 +8,6 @@
 #include "../format.hpp"
 
 namespace mould {
-  /* Standard implementation for float */
-  template<typename Choice>
-  constexpr AutoFormatting<AutoFormattingChoice::fpoint> format_auto(float, Choice choice) {
-    return AutoFormatting<AutoFormattingChoice::fpoint> { };
-  }
-
-  template<typename Formatter>
-  FormattingResult format_fpoint(float value, Formatter formatter) {
-    char buffer[100];
-    if(0 > std::snprintf(buffer, 100, "%*.*f", (int) formatter.format().width, (int) formatter.format().precision, value))
-      return FormattingResult::Error;
-    formatter.append(buffer);
-    return FormattingResult::Success;
-  }
-
   /* Standard implementation for double */
   template<typename Choice>
   constexpr AutoFormatting<AutoFormattingChoice::string> format_auto(double, Choice choice) {
@@ -46,7 +31,7 @@ namespace mould {
     if(!converter.ToShortest(value, &builder))
       return FormattingResult::Error;
 
-    int length = builder.position();
+    unsigned length = builder.position();
 
     const auto important_buffer = std::string_view{buffer, length};
     formatter.append(important_buffer);
@@ -71,7 +56,7 @@ namespace mould {
     if(!converter.ToFixed(value, fixed_count, &builder))
       return FormattingResult::Error;
 
-    int length = builder.position();
+    unsigned length = builder.position();
 
     const auto important_buffer = std::string_view{buffer, length};
     formatter.append(important_buffer);
