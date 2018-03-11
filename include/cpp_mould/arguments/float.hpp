@@ -1,6 +1,9 @@
 #ifndef CPP_MOULD_ARGUMENTS_FLOAT_HPP
 #define CPP_MOULD_ARGUMENTS_FLOAT_HPP
+#include <algorithm>
 #include <cstdio>
+
+#include <double-conversion/double-conversion.h>
 
 #include "../format.hpp"
 
@@ -28,31 +31,27 @@ namespace mould {
 
   template<typename Formatter>
   FormattingResult format_string(double value, Formatter formatter) {
+    using namespace double_conversion;
     char buffer[100];
 
     auto format = formatter.format();
-    int length;
-    if(!format.has_width && !format.has_precision) {
-      if(0 > (length = std::snprintf(buffer, 100, "% g", value)))
-        return FormattingResult::Error;
-    } else if(format.has_width && !format.has_precision) {
-      if(0 > (length = std::snprintf(buffer, 100, "% *g", (int) format.width + 3, value)))
-        return FormattingResult::Error;
-    } else if(!format.has_width && format.has_precision) {
-      if(0 > (length = std::snprintf(buffer, 100, "% .*g", (int) format.precision + 4, value)))
-        return FormattingResult::Error;
-    } else {
-      if(0 > (length = std::snprintf(buffer, 100, "% *.*g", (int) format.width + 8, (int) format.precision + 6, value)))
-        return FormattingResult::Error;
-    }
+    auto& converter = DoubleToStringConverter::EcmaScriptConverter();
+    StringBuilder builder{buffer, 100};
+    if(format.sign == internal::Sign::Always && value >= 0)
+      builder.AddCharacter('+'); // Add the sign
 
-    if(formatter.format().sign == internal::Sign::Always && value >= 0)
-      buffer[0] = '+';
+    if(format.sign == internal::Sign::Pad && value >= 0)
+      builder.AddCharacter(format.padding); // Add the sign
 
-    const auto important_buffer
-      = (formatter.format().sign == internal::Sign::Default && value >= 0)
+    if(!converter.ToShortest(value, &builder))
+      return FormattingResult::Error;
+
+    int length = builder.position();
+
+    const auto important_buffer = std::string_view{buffer, length};
+    /*  = (formatter.format().sign == internal::Sign::Default && value >= 0)
       ? std::string_view{buffer + 1, (unsigned) length - 1}
-      : std::string_view{buffer, (unsigned) length};
+      : std::string_view{buffer, (unsigned) length};*/
     formatter.append(important_buffer);
     return FormattingResult::Success;
   }
