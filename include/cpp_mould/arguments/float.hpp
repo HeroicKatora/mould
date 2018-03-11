@@ -37,11 +37,11 @@ namespace mould {
     auto format = formatter.format();
     auto& converter = DoubleToStringConverter::EcmaScriptConverter();
     StringBuilder builder{buffer, 100};
+
     if(format.sign == internal::Sign::Always && value >= 0)
       builder.AddCharacter('+'); // Add the sign
-
-    if(format.sign == internal::Sign::Pad && value >= 0)
-      builder.AddCharacter(format.padding); // Add the sign
+    else if(format.sign == internal::Sign::Pad && value >= 0)
+      builder.AddCharacter(' '); // Add the sign
 
     if(!converter.ToShortest(value, &builder))
       return FormattingResult::Error;
@@ -49,19 +49,32 @@ namespace mould {
     int length = builder.position();
 
     const auto important_buffer = std::string_view{buffer, length};
-    /*  = (formatter.format().sign == internal::Sign::Default && value >= 0)
-      ? std::string_view{buffer + 1, (unsigned) length - 1}
-      : std::string_view{buffer, (unsigned) length};*/
     formatter.append(important_buffer);
     return FormattingResult::Success;
   }
 
   template<typename Formatter>
   FormattingResult format_fpoint(double value, Formatter formatter) {
+    using namespace double_conversion;
     char buffer[100];
-    if(0 > std::snprintf(buffer, 100, "%*.*f", (int) formatter.format().width, (int) formatter.format().precision, value))
+
+    auto format = formatter.format();
+    auto& converter = DoubleToStringConverter::EcmaScriptConverter();
+    StringBuilder builder{buffer, 100};
+
+    if(format.sign == internal::Sign::Always && value >= 0)
+      builder.AddCharacter('+'); // Add the sign
+    else if(format.sign == internal::Sign::Pad && value >= 0)
+      builder.AddCharacter(' '); // Add the sign
+
+    int fixed_count = format.has_precision ? format.precision : 6;
+    if(!converter.ToFixed(value, fixed_count, &builder))
       return FormattingResult::Error;
-    formatter.append(buffer);
+
+    int length = builder.position();
+
+    const auto important_buffer = std::string_view{buffer, length};
+    formatter.append(important_buffer);
     return FormattingResult::Success;
   }
 }
