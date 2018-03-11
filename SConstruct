@@ -1,7 +1,7 @@
 # vim:ft=python
 env = Environment(tools=['default', 'clang'])
 
-env.MergeFlags(['-std=c++17', '-O3'])
+env.MergeFlags(['-std=c++17', '-O3', '-DNDEBUG'])
 
 if int(ARGUMENTS.get('clang', 0)):
     env.Replace(CXX='clang++')
