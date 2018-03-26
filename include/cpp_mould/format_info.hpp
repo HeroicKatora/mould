@@ -5,10 +5,23 @@
 
 namespace mould::internal {
 
-  template<typename Ignore, typename Then>
+  template<typename T>
+  constexpr auto build_formatter(FormattingResult (*fn)(const T&, Formatter)) {
+    return fn;
+  }
+
+  /* Signal that the validated type itself should be the Then type */
+  struct _validated_type;
+
+  /* Validate the result first type is not `NotImplemented`, then return the second type or the first */
+  template<typename Result, typename Then>
   struct Validate { using type = Then; };
+  template<typename Result>
+  struct Validate<Result, _validated_type> { using type = Result; };
   template<typename Then>
   struct Validate<NotImplemented, Then>;
+  template<>
+  struct Validate<NotImplemented, _validated_type>;
 
 #ifdef CPP_MOULD_DELAYED_FORMATTER
 #error Trying #undef CPP_MOULD_DELAYED_FORMATTER before including this file
@@ -16,14 +29,14 @@ namespace mould::internal {
 #define CPP_MOULD_DELAYED_FORMATTER(kind) \
   template<typename T> \
   inline auto uniq_##kind##_formatter(const T& val, Formatter formatter) \
-  -> typename Validate<decltype(format_##kind(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type { \
+  -> typename Validate<decltype(format_##kind(std::declval<const T&>(), std::declval<Formatter>())), _validated_type>::type { \
     return format_##kind(val, formatter); \
   } \
  \
   template<typename T> \
   constexpr auto kind##_formatter(int) \
-  -> decltype(uniq_##kind##_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) { \
-    return uniq_##kind##_formatter<T>; \
+  -> decltype(build_formatter(uniq_##kind##_formatter<T>)) { \
+    return build_formatter(uniq_##kind##_formatter<T>); \
   } \
  \
   template<typename T> \
@@ -43,8 +56,7 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
   }
 
   template<typename T>
-  constexpr auto automatic_formatter(int)
-  -> typename Validate<decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>())), FormattingResult>::type (*)(const T&, Formatter) {
+  constexpr auto automatic_formatter(typename Validate<decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>())), int>::type) {
     using ChoiceT = decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>()));
 
 #define CPP_MOULD_AUTO_CHOICE(kind)\
