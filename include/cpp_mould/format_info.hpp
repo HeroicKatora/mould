@@ -5,9 +5,17 @@
 
 namespace mould::internal {
 
+  template<typename Fn>
+  struct SingleValueFormatter {
+    Fn function;
+    constexpr auto get(FullOperation) const {
+      return function;
+    }
+  };
+
   template<typename T>
   constexpr auto build_formatter(FormattingResult (*fn)(const T&, Formatter)) {
-    return fn;
+    return SingleValueFormatter<decltype(fn)> { fn };
   }
 
   /* Signal that the validated type itself should be the Then type */
@@ -40,8 +48,8 @@ namespace mould::internal {
   } \
  \
   template<typename T> \
-  constexpr auto kind##_formatter(...) -> FormattingResult (*)(const T&, Formatter) { \
-    return nullptr; \
+  constexpr auto kind##_formatter(...) -> SingleValueFormatter<nullptr_t> { \
+    return SingleValueFormatter<nullptr_t> { nullptr }; \
   } \
 
 CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
@@ -65,7 +73,7 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
     CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_AUTO_CHOICE)
 #undef CPP_MOULD_AUTO_CHOICE
     /* else */ {
-    	return nullptr;
+    	return SingleValueFormatter<nullptr_t> { nullptr };
     }
   }
 
@@ -78,7 +86,7 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
   struct TypedFormatter {
     using formatting_function = FormattingResult (*)(const T&, Formatter);
 #define CPP_MOULD_TYPED_CONSTEXPR(kind)\
-    constexpr static formatting_function kind = kind##_formatter<T>(0);
+    constexpr static auto kind = kind##_formatter<T>(0);
 
     CPP_MOULD_TYPED_CONSTEXPR(automatic)
     CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPED_CONSTEXPR)
@@ -94,9 +102,9 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
     constexpr static TypedFormatterInformation get(FullOperation operation) {
       TypedFormatterInformation<T> info = {};
       switch(operation.formatting.kind) {
-      case FormatKind::Auto: info.function = TypedFormatter<T>::automatic; break;
+      case FormatKind::Auto: info.function = TypedFormatter<T>::automatic.get(operation); break;
 #define CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH(kind) \
-      case FormatKind:: kind : info.function = TypedFormatter<T>:: kind; break;
+      case FormatKind:: kind : info.function = TypedFormatter<T>:: kind.get(operation); break;
 
       CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH)
 #undef CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH
