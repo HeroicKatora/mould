@@ -4,7 +4,6 @@
 #include "format.hpp"
 
 namespace mould::internal {
-
   template<typename Fn>
   struct SingleValueFormatter {
     Fn function;
@@ -18,18 +17,13 @@ namespace mould::internal {
     return SingleValueFormatter<decltype(fn)> { fn };
   }
 
-  /* Signal that the validated type itself should be the Then type */
-  struct _validated_type;
+  template<typename T>
+  constexpr auto build_formatter(NotImplemented (*fn)(const T&, Formatter)) {
+    return SingleValueFormatter<std::nullptr_t> { nullptr };
+  }
 
-  /* Validate the result first type is not `NotImplemented`, then return the second type or the first */
-  template<typename Result, typename Then>
-  struct Validate { using type = Then; };
-  template<typename Result>
-  struct Validate<Result, _validated_type> { using type = Result; };
-  template<typename Then>
-  struct Validate<NotImplemented, Then>;
-  template<>
-  struct Validate<NotImplemented, _validated_type>;
+  template<typename, typename Then>
+  using Validate = Then;
 
 #ifdef CPP_MOULD_DELAYED_FORMATTER
 #error Trying #undef CPP_MOULD_DELAYED_FORMATTER before including this file
@@ -37,7 +31,7 @@ namespace mould::internal {
 #define CPP_MOULD_DELAYED_FORMATTER(kind) \
   template<typename T> \
   inline auto uniq_##kind##_formatter(const T& val, Formatter formatter) \
-  -> typename Validate<decltype(format_##kind(std::declval<const T&>(), std::declval<Formatter>())), _validated_type>::type { \
+  -> decltype(format_##kind(std::declval<const T&>(), std::declval<Formatter>())) { \
     return format_##kind(val, formatter); \
   } \
  \
@@ -48,8 +42,8 @@ namespace mould::internal {
   } \
  \
   template<typename T> \
-  constexpr auto kind##_formatter(...) -> SingleValueFormatter<nullptr_t> { \
-    return SingleValueFormatter<nullptr_t> { nullptr }; \
+  constexpr auto kind##_formatter(...) -> SingleValueFormatter<std::nullptr_t> { \
+    return SingleValueFormatter<std::nullptr_t> { nullptr }; \
   } \
 
 CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
@@ -64,7 +58,7 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
   }
 
   template<typename T>
-  constexpr auto automatic_formatter(typename Validate<decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>())), int>::type) {
+  constexpr auto automatic_formatter(Validate<decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>())), int>) {
     using ChoiceT = decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>()));
 
 #define CPP_MOULD_AUTO_CHOICE(kind)\
@@ -73,7 +67,7 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
     CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_AUTO_CHOICE)
 #undef CPP_MOULD_AUTO_CHOICE
     /* else */ {
-    	return SingleValueFormatter<nullptr_t> { nullptr };
+    	return SingleValueFormatter<std::nullptr_t> { nullptr };
     }
   }
 
