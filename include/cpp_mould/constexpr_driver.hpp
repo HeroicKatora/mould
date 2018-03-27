@@ -20,7 +20,7 @@ namespace mould::internal::constexpr_driver {
     FullOperation operation;
 
     constexpr TypedArgumentExpression initialize(FullOperation operation) {
-      const auto info = TypedFormatterInformation<T>::get(operation);
+      const auto info = TypedFormatter<T>::get(operation);
       return { argument_index, info.function, operation };
     }
   };

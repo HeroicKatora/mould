@@ -4,6 +4,15 @@
 #include "format.hpp"
 
 namespace mould::internal {
+  /* Specialization point for addition information. Every type that should be formatted 
+   * MUST provide an implemenation of this.
+   */
+  template<typename T>
+  struct TypedFormatterInformation {
+    using formatting_function = FormattingResult (*)(const T&, Formatter);
+    formatting_function function;
+  };
+
   template<typename Fn>
   struct SingleValueFormatter {
     Fn function;
@@ -78,27 +87,19 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
 
   template<typename T>
   struct TypedFormatter {
-    using formatting_function = FormattingResult (*)(const T&, Formatter);
 #define CPP_MOULD_TYPED_CONSTEXPR(kind)\
     constexpr static auto kind = kind##_formatter<T>(0);
 
     CPP_MOULD_TYPED_CONSTEXPR(automatic)
     CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPED_CONSTEXPR)
 #undef CPP_MOULD_TYPED_CONSTEXPR
-  };
 
-  /* Specialization point for addition information. Every type that should be formatted 
-   * MUST provide an implemenation of this.
-   */
-  template<typename T>
-  struct TypedFormatterInformation {
-    typename TypedFormatter<T>::formatting_function function;
-    constexpr static TypedFormatterInformation get(FullOperation operation) {
+    constexpr static TypedFormatterInformation<T> get(FullOperation operation) {
       TypedFormatterInformation<T> info = {};
       switch(operation.formatting.kind) {
-      case FormatKind::Auto: info.function = TypedFormatter<T>::automatic.get(operation); break;
+      case FormatKind::Auto: info.function = TypedFormatter::automatic.get(operation); break;
 #define CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH(kind) \
-      case FormatKind:: kind : info.function = TypedFormatter<T>:: kind.get(operation); break;
+      case FormatKind:: kind : info.function = TypedFormatter:: kind.get(operation); break;
 
       CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH)
 #undef CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH
