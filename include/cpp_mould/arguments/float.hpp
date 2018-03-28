@@ -14,8 +14,10 @@ namespace mould {
     return AutoFormatting<AutoFormattingChoice::string> { };
   }
 
+  struct DoubleResultInformation { };
+
   template<typename Formatter>
-  FormattingResult format_string(double value, Formatter formatter) {
+  ResultWithInformation<DoubleResultInformation> format_string(double value, Formatter formatter) {
     using namespace double_conversion;
     char buffer[100];
 
@@ -39,7 +41,7 @@ namespace mould {
   }
 
   template<typename Formatter>
-  FormattingResult format_fpoint(double value, Formatter formatter) {
+  ResultWithInformation<DoubleResultInformation> format_fpoint(double value, Formatter formatter) {
     using namespace double_conversion;
     char buffer[100];
 

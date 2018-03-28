@@ -18,6 +18,19 @@ namespace mould {
     Error,
   };
 
+  // The result of a formatter which carries compile time information about
+  // the usage of the formatter engine etc.
+  template<typename Information>
+  struct ResultWithInformation {
+    FormattingResult result;
+    constexpr ResultWithInformation(FormattingResult result)
+      : result(result) { }
+    constexpr operator FormattingResult() { return result; }
+    
+    /* Forwards the user defined max_width, gives documentation */
+    static constexpr int max_width() { return Information::max_width; }
+  };
+
   enum struct AutoFormattingChoice {
     NO_AUTO,
 
