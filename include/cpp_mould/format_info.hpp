@@ -33,16 +33,21 @@ namespace mould::internal {
     }
   };
 
+  /* F will always be the same as fn but the former can be used in template (compile-time only) 
+   * context while the latter is used as a dispatch
+   */
   template<auto F, typename T>
   constexpr auto build_formatter(FormattingResult (*fn)(const T&, Formatter)) {
     return SingleValueFormatter<decltype(fn)> { fn };
   }
 
+  // Dispatch for functions which explicitely signal not being implemented
   template<auto F, typename T>
   constexpr auto build_formatter(NotImplemented (*fn)(const T&, Formatter)) {
     return SingleValueFormatter<std::nullptr_t> { nullptr };
   }
 
+  // Dispatch for functions which have compile time information
   template<auto F, typename T, typename I>
   constexpr auto build_formatter(ResultWithInformation<I> (*fn)(const T&, Formatter)) {
     return InformedFormatter<T, F, I> { };
