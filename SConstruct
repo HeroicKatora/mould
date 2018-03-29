@@ -5,10 +5,10 @@ env = Environment(tools=['default', 'clang'])
 env.MergeFlags(['-std=c++17', '-O3', '-DNDEBUG'])
 
 def is_clang():
-    bool(int(ARGUMENTS.get('clang', 0)))
+    return bool(int(ARGUMENTS.get('clang', 0)))
 
 def is_profile():
-    bool(int(ARGUMENTS.get('profile', 0)))
+    return bool(int(ARGUMENTS.get('profile', 0)))
 
 if is_clang():
     env.Replace(CXX='clang++')
