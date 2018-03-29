@@ -22,28 +22,30 @@ namespace mould::internal {
     }
   };
 
-  template<typename T, typename Fn, typename I>
+  template<typename T, auto F, typename I>
   struct InformedFormatter {
-    Fn function;
+    static FormattingResult proxy(const T& t, Formatter f) {
+      return F(t, f);
+    }
 
     constexpr auto get(FullOperation) const {
-      return (FormattingResult(*)(const T&, Formatter))function;
+      return InformedFormatter::proxy;
     }
   };
 
-  template<typename T>
+  template<auto F, typename T>
   constexpr auto build_formatter(FormattingResult (*fn)(const T&, Formatter)) {
     return SingleValueFormatter<decltype(fn)> { fn };
   }
 
-  template<typename T>
+  template<auto F, typename T>
   constexpr auto build_formatter(NotImplemented (*fn)(const T&, Formatter)) {
     return SingleValueFormatter<std::nullptr_t> { nullptr };
   }
 
-  template<typename T, typename I>
+  template<auto F, typename T, typename I>
   constexpr auto build_formatter(ResultWithInformation<I> (*fn)(const T&, Formatter)) {
-    return InformedFormatter<T, decltype(fn), I> { fn };
+    return InformedFormatter<T, F, I> { };
   }
 
   template<typename, typename Then>
@@ -61,8 +63,8 @@ namespace mould::internal {
  \
   template<typename T> \
   constexpr auto kind##_formatter(int) \
-  -> decltype(build_formatter(uniq_##kind##_formatter<T>)) { \
-    return build_formatter(uniq_##kind##_formatter<T>); \
+  -> decltype(build_formatter<uniq_##kind##_formatter<T>>(uniq_##kind##_formatter<T>)) { \
+    return build_formatter<uniq_##kind##_formatter<T>>(uniq_##kind##_formatter<T>); \
   } \
  \
   template<typename T> \
