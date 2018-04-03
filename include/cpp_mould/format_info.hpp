@@ -10,7 +10,12 @@ namespace mould::internal {
   template<typename T>
   struct TypedFormatterInformation {
     using formatting_function = FormattingResult (*)(const T&, Formatter);
+
     formatting_function function;
+    int max_length = -1;
+
+    constexpr TypedFormatterInformation(formatting_function function)
+      : function(function) { }
   };
 
 
@@ -30,6 +35,13 @@ namespace mould::internal {
 
     constexpr auto get(FullOperation) const {
       return InformedFormatter::proxy;
+    }
+  };
+
+  template<typename T, auto F, typename C>
+  struct ChoosingFormatter {
+    constexpr auto get(FullOperation operation) const {
+      return C::get(operation);
     }
   };
 
@@ -117,16 +129,14 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
 #undef CPP_MOULD_TYPED_CONSTEXPR
 
     constexpr static TypedFormatterInformation<T> get(FullOperation operation) {
-      TypedFormatterInformation<T> info = {};
       switch(operation.formatting.kind) {
-      case FormatKind::Auto: info.function = TypedFormatter::automatic.get(operation); break;
+      case FormatKind::Auto: return TypedFormatter::automatic.get(operation);
 #define CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH(kind) \
-      case FormatKind:: kind : info.function = TypedFormatter:: kind.get(operation); break;
+      case FormatKind:: kind : return TypedFormatter:: kind.get(operation);
 
       CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH)
 #undef CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH
       }
-      return info;
     }
   };
 

@@ -30,6 +30,16 @@ namespace mould {
     /* Forwards the user defined max_width, gives documentation */
     static constexpr int max_width() { return Information::max_width; }
   };
+  
+  // The formatter can statically determine a better function based on the
+  // exact format information, instead of only based on the format type.
+  template<typename Chooser>
+  struct FineGrainedFormatChoice {
+    FormattingResult result;
+    constexpr FineGrainedFormatChoice(FormattingResult result)
+      : result(result) { }
+    constexpr operator FormattingResult() { return result; }
+  };
 
   enum struct AutoFormattingChoice {
     NO_AUTO,
