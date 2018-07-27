@@ -126,7 +126,9 @@ namespace mould {
         exponent = 0;
       } else {
         const int fill_length = exponent - max_shift;
-        std::memmove(buffer + dot, buffer + dot + 1, max_shift);
+	const auto suffix_begin = buffer + dot + 1;
+	const auto suffix_end = suffix_begin + max_shift;
+	std::move(suffix_begin, suffix_end, buffer + dot);
         std::fill_n(buffer + dot + max_shift, fill_length, '0');
         length += fill_length;
 
@@ -135,19 +137,21 @@ namespace mould {
 
         exponent = 0;
       }
-    } else if(exponent < 0) {
+    } else if(exponent < 0 && dot == 0) {
       // WTF?
       std::abort();
     } else if(exponent < 0) {
       assert(length > dot);
+      assert(dot > 0);
       const int shift_width = -exponent;
 
       const int suffix_len = length - dot - 1;
       const auto suffix_start = buffer + dot + 1;
-      const auto suffix_dest = suffix_start + shift_width;
-      std::memmove(suffix_dest, suffix_start, suffix_len);
+      const auto suffix_end = buffer + length;
+      const auto suffix_back_dest = suffix_end + shift_width;
+      std::move_backward(suffix_start, suffix_end, suffix_back_dest);
 
-      suffix_dest[-1] = buffer[dot - 1];
+      suffix_start[shift_width - 1] = buffer[dot - 1];
       buffer[dot - 1] = '0';
       std::fill(buffer + dot + 1, buffer + dot + shift_width, '0');
 
@@ -157,8 +161,9 @@ namespace mould {
     }
 
     unsigned used_precision = length - dot - 1;
-    for(auto fill = used_precision; fill < fixed_count; fill++) {
-      buffer[length++] = '0';
+    if(used_precision < fixed_count) {
+      std::fill_n(buffer + length, fixed_count - used_precision, '0');
+      length += fixed_count - used_precision;
     }
 
     const auto important_buffer = std::string_view{buffer, length};
