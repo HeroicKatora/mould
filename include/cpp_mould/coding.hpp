@@ -258,6 +258,8 @@ namespace mould::internal {
       if(arg == FormatArgument::Parameter && value < 256)
         return InlineValue::Parameter;
 
+      // Else crash (work around GCC bug)
+      return _fail_constexpr<InlineValue>(1);
     }
 
     constexpr static FormatArgument _determine_argument_kind(InlineValue value_kind) {
@@ -266,6 +268,7 @@ namespace mould::internal {
       case InlineValue::Immediate: return FormatArgument::Value;
       case InlineValue::Inline: return FormatArgument::Value;
       case InlineValue::Parameter: return FormatArgument::Parameter;
+      default: return _fail_constexpr<FormatArgument>(1);
       }
     }
 

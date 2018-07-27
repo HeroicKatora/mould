@@ -24,6 +24,10 @@ namespace mould {
     Sign sign;
   };
 
+  struct FormatterInformation {
+    
+  };
+
   // Forward declaration to the type defined in "engine.hpp"
   namespace internal {
     class Engine;
