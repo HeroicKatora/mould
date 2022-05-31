@@ -25,7 +25,7 @@ namespace mould {
     const size_t lzeroch = std::countl_zero(asint) / 4;
     const size_t width = 2*sizeof(void*) - lzeroch;
 
-    char* result_buffer = formatter.show_buf();
+    char* result_buffer = formatter.show_buf(2 + width);
     result_buffer = result_buffer ? result_buffer : buffer;
     const auto start = result_buffer;
 

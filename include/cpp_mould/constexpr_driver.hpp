@@ -115,9 +115,17 @@ namespace mould::internal::constexpr_driver {
       Arguments& ... args) 
     {
       constexpr auto& expression = std::get<index>(CompiledExpressions<Format, Arguments...>.expressions);
-      context.engine.append(
-        context.format_buffer.begin() + expression.offset, 
-        context.format_buffer.begin() + expression.offset + expression.length);
+      // This is going to be determined at compile time, so the switch actually
+      // make sense. The compiler doesn't seem to like inlining complex
+      // functions at that point, so it doesn't realize the simplification of
+      // `append(char*, char*)` for the special case of a single character.
+      if (expression.length == 0) {} else if (expression.length == 1) {
+        context.engine.append(context.format_buffer.begin()[expression.offset]);
+      } else {
+        context.engine.append(
+          context.format_buffer.begin() + expression.offset, 
+          context.format_buffer.begin() + expression.offset + expression.length);
+      }
     }
   };
 
