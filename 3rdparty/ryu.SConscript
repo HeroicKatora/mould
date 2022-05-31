@@ -2,7 +2,11 @@
 from collections import namedtuple
 Import('env')
 
-ryu_sources = ['ryu/ryu/' + x for x in ('d2s.c', 'f2s.c')]
+ryu_sources = ['ryu/ryu/' + x for x in (
+		'd2s.c',
+		'd2fixed.c',
+		'f2s.c'
+	)]
 library_name = 'ryu'
 
 ryu_static_objects = [
