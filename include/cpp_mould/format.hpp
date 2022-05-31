@@ -42,6 +42,9 @@ namespace mould {
     void append(const char*) const;
     void append(std::string_view) const;
 
+    char* show_buf(size_t req);
+    void put_buf(size_t req);
+
     inline const Format& format() const {
       return _format;
     }

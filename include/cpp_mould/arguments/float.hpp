@@ -24,7 +24,9 @@ namespace mould {
     char buffer[100];
 
     auto format = formatter.format();
-    char* result_buffer = buffer;
+    char* result_buffer = formatter.show_buf(100);
+    result_buffer = result_buffer ? result_buffer : buffer;
+    const auto start = result_buffer;
 
     if(format.sign == internal::Sign::Always && value >= 0)
       *result_buffer++ = '+'; // Add the sign
@@ -32,10 +34,15 @@ namespace mould {
       *result_buffer++ = ' '; // Add the sign
 
     result_buffer = dragonbox::Dtoa(result_buffer, value);
-    const size_t length = result_buffer - buffer;
+    const size_t length = result_buffer - start;
 
-    const auto important_buffer = std::string_view{buffer, length};
-    formatter.append(important_buffer);
+    if (start == buffer) {
+      const auto important_buffer = std::string_view{start, length};
+      formatter.append(important_buffer);
+    } else {
+      formatter.put_buf(length);
+    }
+
     return FormattingResult::Success;
   }
 
@@ -45,7 +52,9 @@ namespace mould {
     char buffer[100];
 
     auto format = formatter.format();
-    char* result_buffer = buffer;
+    char* result_buffer = formatter.show_buf(100);
+    result_buffer = result_buffer ? result_buffer : buffer;
+    const auto start = result_buffer;
 
     if(format.sign == internal::Sign::Always && value >= 0)
       *result_buffer++ = '+'; // Add the sign
@@ -55,9 +64,14 @@ namespace mould {
     unsigned fixed_count = format.has_precision ? format.precision : 6;
 
     int written = d2fixed_buffered_n(value, fixed_count, result_buffer);
-    const size_t total_len = static_cast<size_t>((result_buffer + written) - buffer);
-    const auto important_buffer = std::string_view{buffer, total_len};
-    formatter.append(important_buffer);
+    const size_t length = static_cast<size_t>((result_buffer + written) - start);
+
+    if (start == buffer) {
+      const auto important_buffer = std::string_view{start, length};
+      formatter.append(important_buffer);
+    } else {
+      formatter.put_buf(length);
+    }
 
     return FormattingResult::Success;
   }

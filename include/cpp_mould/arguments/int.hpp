@@ -18,8 +18,6 @@ namespace mould {
       return FormattingResult::Success;
     }
 
-    char view[std::numeric_limits<int>::digits10] = {};
-
     int pre_length = (pvalue < 0 || formatter.format().sign != internal::Sign::Default) ? 1 : 0;
     // This convoluted mess avoids the failure on -MAX_INT
     const unsigned value = (pvalue < 0) ? (~static_cast<unsigned>(pvalue)) + static_cast<unsigned>(1) : pvalue;
@@ -35,17 +33,6 @@ namespace mould {
     const unsigned int formatted_length = number_length;
 
     int remaining_length = formatter.format().width - number_length;
-    unsigned iterval = value;
-
-    for(;;) {
-      if(iterval > 0) view[number_length - 1] = '0' + (iterval % 10);
-      if(iterval > 10) view[number_length - 2] = '0' + ((iterval/10) % 10);
-      if(iterval > 100) view[number_length - 3] = '0' + ((iterval/100) % 10);
-      if(iterval > 1000) view[number_length - 4] = '0' + ((iterval/1000) % 10);
-      iterval /= 10000;
-      number_length -= 4;
-      if(number_length <= 0) break;
-    }
 
     if(pvalue < 0) formatter.append('-');
     else if(formatter.format().sign == internal::Sign::Always) formatter.append('+');
@@ -54,7 +41,27 @@ namespace mould {
     const char padding = formatter.format().has_padding ? (char) formatter.format().padding : ' ';
     for(int i = 0; i < remaining_length; i++) formatter.append(padding);
 
-    formatter.append(std::string_view{view, formatted_length});
+    char view[std::numeric_limits<int>::digits10] = {};
+    char* result_buffer = formatter.show_buf(sizeof(view));
+    result_buffer = result_buffer ? result_buffer : view;
+    const auto start = result_buffer;
+
+    for(unsigned iterval = value;;) {
+      if(iterval > 0) result_buffer[number_length - 1] = '0' + (iterval % 10);
+      if(iterval > 10) result_buffer[number_length - 2] = '0' + ((iterval/10) % 10);
+      if(iterval > 100) result_buffer[number_length - 3] = '0' + ((iterval/100) % 10);
+      if(iterval > 1000) result_buffer[number_length - 4] = '0' + ((iterval/1000) % 10);
+      iterval /= 10000;
+      number_length -= 4;
+      if(number_length <= 0) break;
+    }
+
+    if (start == view) {
+      formatter.append(std::string_view{view, formatted_length});
+    } else {
+      formatter.put_buf(formatted_length);
+    }
+
     return FormattingResult::Success;
   }
 }

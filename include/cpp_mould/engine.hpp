@@ -17,6 +17,9 @@ namespace mould::internal {
 
     virtual void append(const char* begin, const char* end) = 0;
     virtual void append(char) = 0;
+
+    virtual char* show_buf(size_t) = 0;
+    virtual void put_buf(size_t) = 0;
   };
 
   class StringEngine: public Engine {
@@ -35,6 +38,10 @@ namespace mould::internal {
     inline void append(char c) override {
       output.push_back(c);
     }
+    inline char* show_buf(size_t) override {
+      return nullptr;
+    }
+    inline void put_buf(size_t) override {}
   private:
     std::string& output;
   };
@@ -76,6 +83,14 @@ namespace mould::internal {
       }
 
       *free++ = c;
+    }
+
+    inline char* show_buf(size_t len) override {
+      return len <= end - free ? free : nullptr;
+    }
+
+    inline void put_buf(size_t len) override {
+      free = free + len;
     }
 
     inline void flush() {
@@ -123,6 +138,14 @@ namespace mould {
 
   inline void Formatter::append(std::string_view sv) const {
     engine.append(sv.data(), sv.data() + sv.size());
+  }
+
+  inline char* Formatter::show_buf(size_t req) {
+    return engine.show_buf(req);
+  }
+
+  inline void Formatter::put_buf(size_t req) {
+    return engine.put_buf(req);
   }
 }
 
