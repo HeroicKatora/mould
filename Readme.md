@@ -1,13 +1,16 @@
 A format library with Python syntax, sane defaults, fast. For compile-time C++.
 
+Compatible with C++17 and upwards.
+
 -----------
 
-Implements the well-known `formatlib` benchmark in [speed.cpp](./test/run.cpp).
+Implements the `formatlib` benchmark in [speed.cpp](./test/run.cpp).
+Tested with `-std=c++20` as it includes bit tricks for faster code.
 
 | test name | run time | executable size (stripped) |
 |-----------|---------:|---------------------------:|
-| gcc       | 0.281s   | 143kB |
-| clang     | 0.157s   | 43kB |
+| gcc       | 0.253s   | 135kB |
+| clang     | 0.140s   | 43kB |
 
 ------------
 
