@@ -1,5 +1,6 @@
 #ifndef CPP_MOULD_ENGINE_HPP
 #define CPP_MOULD_ENGINE_HPP
+#include <algorithm>
 #include <memory>
 #include <ostream>
 #include <span>
@@ -8,12 +9,12 @@
 #include "format_info.hpp"
 
 namespace mould::internal {
-  // A formatter into some output.
+  // A character interface into some output. Do not worry, these virtual class
+  // usually get resolved and aren't the main overhead.
   class Engine {
   public:
     virtual ~Engine() {}
 
-    friend class ::mould::Formatter;
     virtual void append(const char* begin, const char* end) = 0;
     virtual void append(char) = 0;
   };
@@ -53,9 +54,16 @@ namespace mould::internal {
     }
 
     inline void append(const char* begin, const char* end) override {
-      size_t len = end - begin;
+      const size_t len = end - begin;
       if (len <= end - free) {
-        for (;len --> 0;) *free++ = *begin++;
+        switch (len) {
+        case 2: *free++ = *begin++;
+        case 1: *free++ = *begin++;
+        case 0: break;
+        default:
+          std::copy_n(begin, len, free);
+          free = free + len;
+        }
       } else {
         flush();
         streambuf->sputn(begin, len);

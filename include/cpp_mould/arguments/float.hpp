@@ -5,6 +5,7 @@
 
 #include <double-conversion/double-conversion.h>
 #include <ryu/ryu.h>
+#include <dragonbox.h>
 
 #include "../format.hpp"
 
@@ -30,10 +31,8 @@ namespace mould {
     else if(format.sign == internal::Sign::Pad && value >= 0)
       *result_buffer++ = ' '; // Add the sign
 
-    for(auto rest = result_buffer; rest < buffer + 100; rest++)
-      *rest = '\0';
-    d2s_buffered(value, result_buffer);
-    unsigned length = std::strlen(buffer);
+    result_buffer = dragonbox::Dtoa(result_buffer, value);
+    const size_t length = result_buffer - buffer;
 
     const auto important_buffer = std::string_view{buffer, length};
     formatter.append(important_buffer);
