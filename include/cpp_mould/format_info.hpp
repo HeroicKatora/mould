@@ -4,11 +4,69 @@
 #include "format.hpp"
 
 namespace mould::internal {
+  /* Specialization point for addition information. Every type that should be formatted 
+   * MUST provide an implementation of this.
+   */
+  template<typename T>
+  struct TypedFormatterInformation {
+    using formatting_function = FormattingResult (*)(const T&, Formatter);
 
-  template<typename Ignore, typename Then>
-  struct Validate { using type = Then; };
-  template<typename Then>
-  struct Validate<NotImplemented, Then>;
+    formatting_function function;
+    int max_length = -1;
+
+    constexpr TypedFormatterInformation(formatting_function function)
+      : function(function) { }
+  };
+
+
+  template<typename Fn>
+  struct SingleValueFormatter {
+    Fn function;
+    constexpr auto get(FullOperation) const {
+      return function;
+    }
+  };
+
+  template<typename T, auto F, typename I>
+  struct InformedFormatter {
+    static FormattingResult proxy(const T& t, Formatter f) {
+      return F(t, f);
+    }
+
+    constexpr auto get(FullOperation) const {
+      return InformedFormatter::proxy;
+    }
+  };
+
+  template<typename T, auto F, typename C>
+  struct ChoosingFormatter {
+    constexpr auto get(FullOperation operation) const {
+      return C::get(operation);
+    }
+  };
+
+  /* F will always be the same as fn but the former can be used in template (compile-time only) 
+   * context while the latter is used as a dispatch
+   */
+  template<auto F, typename T>
+  constexpr auto build_formatter(FormattingResult (*fn)(const T&, Formatter)) {
+    return SingleValueFormatter<decltype(fn)> { fn };
+  }
+
+  // Dispatch for functions which explicitly signal not being implemented
+  template<auto F, typename T>
+  constexpr auto build_formatter(NotImplemented (*fn)(const T&, Formatter)) {
+    return SingleValueFormatter<std::nullptr_t> { nullptr };
+  }
+
+  // Dispatch for functions which have compile time information
+  template<auto F, typename T, typename I>
+  constexpr auto build_formatter(ResultWithInformation<I> (*fn)(const T&, Formatter)) {
+    return InformedFormatter<T, F, I> { };
+  }
+
+  template<typename, typename Then>
+  using Validate = Then;
 
 #ifdef CPP_MOULD_DELAYED_FORMATTER
 #error Trying #undef CPP_MOULD_DELAYED_FORMATTER before including this file
@@ -16,19 +74,19 @@ namespace mould::internal {
 #define CPP_MOULD_DELAYED_FORMATTER(kind) \
   template<typename T> \
   inline auto uniq_##kind##_formatter(const T& val, Formatter formatter) \
-  -> typename Validate<decltype(format_##kind(std::declval<const T&>(), std::declval<Formatter>())), FormattingResult>::type { \
+  -> decltype(format_##kind(std::declval<const T&>(), std::declval<Formatter>())) { \
     return format_##kind(val, formatter); \
   } \
  \
   template<typename T> \
   constexpr auto kind##_formatter(int) \
-  -> decltype(uniq_##kind##_formatter(std::declval<const T&>(), std::declval<Formatter>()))(*)(const T&, Formatter) { \
-    return uniq_##kind##_formatter<T>; \
+  -> decltype(build_formatter<uniq_##kind##_formatter<T>>(uniq_##kind##_formatter<T>)) { \
+    return build_formatter<uniq_##kind##_formatter<T>>(uniq_##kind##_formatter<T>); \
   } \
  \
   template<typename T> \
-  constexpr auto kind##_formatter(...) -> FormattingResult (*)(const T&, Formatter) { \
-    return nullptr; \
+  constexpr auto kind##_formatter(...) -> SingleValueFormatter<std::nullptr_t> { \
+    return SingleValueFormatter<std::nullptr_t> { nullptr }; \
   } \
 
 CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
@@ -43,8 +101,7 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
   }
 
   template<typename T>
-  constexpr auto automatic_formatter(int)
-  -> typename Validate<decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>())), FormattingResult>::type (*)(const T&, Formatter) {
+  constexpr auto automatic_formatter(Validate<decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>())), int>) {
     using ChoiceT = decltype(uniq_automatic_formatter(std::declval<const T&>(), std::declval<Choice>()));
 
 #define CPP_MOULD_AUTO_CHOICE(kind)\
@@ -53,7 +110,7 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
     CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_AUTO_CHOICE)
 #undef CPP_MOULD_AUTO_CHOICE
     /* else */ {
-    	return nullptr;
+    	return SingleValueFormatter<std::nullptr_t> { nullptr };
     }
   }
 
@@ -64,32 +121,23 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
 
   template<typename T>
   struct TypedFormatter {
-    using formatting_function = FormattingResult (*)(const T&, Formatter);
 #define CPP_MOULD_TYPED_CONSTEXPR(kind)\
-    constexpr static formatting_function kind = kind##_formatter<T>(0);
+    constexpr static auto kind = kind##_formatter<T>(0);
 
     CPP_MOULD_TYPED_CONSTEXPR(automatic)
     CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPED_CONSTEXPR)
 #undef CPP_MOULD_TYPED_CONSTEXPR
-  };
 
-  /* Specialization point for addition information. Every type that should be formatted 
-   * MUST provide an implemenation of this.
-   */
-  template<typename T>
-  struct TypedFormatterInformation {
-    typename TypedFormatter<T>::formatting_function function;
-    constexpr static TypedFormatterInformation get(FullOperation operation) {
-      TypedFormatterInformation<T> info = {};
+    constexpr static TypedFormatterInformation<T> get(FullOperation operation) {
       switch(operation.formatting.kind) {
-      case FormatKind::Auto: info.function = TypedFormatter<T>::automatic; break;
+      case FormatKind::Auto: return TypedFormatter::automatic.get(operation);
 #define CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH(kind) \
-      case FormatKind:: kind : info.function = TypedFormatter<T>:: kind; break;
+      case FormatKind:: kind : return TypedFormatter:: kind.get(operation);
 
       CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH)
 #undef CPP_MOULD_TYPED_FORMATTER_TYPE_SWITCH
+      default: return _fail_constexpr<decltype(TypedFormatter::automatic.get(operation))>(1);
       }
-      return info;
     }
   };
 
@@ -141,6 +189,7 @@ CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DELAYED_FORMATTER)
 
       CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_TYPE_ERASED_FORMATTER_SWITCH_CASE)
 #     undef CPP_MOULD_TYPE_ERASED_FORMATTER_SWITCH_CASE
+      default: return _fail_constexpr<decltype(automatic)>(1);
       }
     }
   };

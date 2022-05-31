@@ -28,6 +28,7 @@ namespace mould::internal {
     case ReadStatus::InvalidIndex: return "InvalidIndex";
     case ReadStatus::InvalidOpcode: return "InvalidOpcode";
     case ReadStatus::InvalidFormatImmediate: return "InvalidFormatImmediate";
+    default: return _fail_constexpr<const char*>(0);
     }
   }
 
@@ -44,6 +45,7 @@ namespace mould::internal {
 
     CPP_MOULD_REPEAT_FOR_FORMAT_KINDS_MACRO(CPP_MOULD_DESCRIBE_FORMAT_KIND)
 #undef CPP_MOULD_DESCRIBE_FORMAT_KIND
+    default: return _fail_constexpr<const char*>(0);
     }
   }
 
@@ -53,6 +55,7 @@ namespace mould::internal {
     case InlineValue::Immediate: return "Immediate";
     case InlineValue::Inline: return "Inline";
     case InlineValue::Parameter: return "Parameter";
+    default: return _fail_constexpr<const char*>(0);
     }
   }
 
@@ -61,6 +64,7 @@ namespace mould::internal {
     case FormatArgument::Auto: return "Auto";
     case FormatArgument::Value: return "Value";
     case FormatArgument::Parameter: return "Parameter";
+    default: return _fail_constexpr<const char*>(0);
     }
   }
 
@@ -70,6 +74,7 @@ namespace mould::internal {
     case Alignment::Left: return "Left";
     case Alignment::Right: return "Right";
     case Alignment::Center: return "Center";
+    default: return _fail_constexpr<const char*>(0);
     }
   }
 
@@ -78,6 +83,7 @@ namespace mould::internal {
     case Sign::Default: return "Default";
     case Sign::Always: return "Always";
     case Sign::Pad: return "Pad";
+    default: return _fail_constexpr<const char*>(0);
     }
   }
 

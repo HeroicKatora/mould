@@ -1,3 +1,9 @@
 [submodule "3rdparty/double-conversion"]
 	path = 3rdparty/double-conversion
 	url = https://github.com/google/double-conversion
+[submodule "3rdparty/ryu"]
+	path = 3rdparty/ryu
+	url = https://github.com/ulfjack/ryu
+[submodule "3rdparty/dragonbox"]
+	path = 3rdparty/dragonbox
+	url = https://github.com/abolz/Drachennest

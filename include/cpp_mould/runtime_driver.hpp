@@ -37,7 +37,7 @@ namespace mould::internal {
 
     DriverResult execute();
   private:
-    Engine engine;
+    StringEngine engine;
     const Buffer<const char> format_buffer;
     FullOperationIterator iterator;
     const TypeErasedArgument* args_begin;

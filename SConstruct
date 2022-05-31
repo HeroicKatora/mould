@@ -1,11 +1,23 @@
 # vim:ft=python
-env = Environment(tools=['default', 'clang'])
+import os.path
 
+env = Environment(tools=['default', 'clang'])
 env.MergeFlags(['-std=c++17', '-O3', '-DNDEBUG'])
 
-if int(ARGUMENTS.get('clang', 0)):
+def is_clang():
+    return bool(int(ARGUMENTS.get('clang', 0)))
+
+def is_profile():
+    return bool(int(ARGUMENTS.get('profile', 0)))
+
+if is_clang():
     env.Replace(CXX='clang++')
-if int(ARGUMENTS.get('profile', 0)): 
+if is_profile(): 
     env.Append(LINKFLAGS='-lprofiler')
 
-SConscript('SConscript', variant_dir='build', exports='env')
+output_suffix = '{}-{}'.format(
+        'clang' if is_clang() else 'gcc',
+        'profile' if is_profile() else 'noprofile')
+
+build_dir = os.path.join('build', output_suffix)
+SConscript('SConscript', variant_dir=build_dir, exports='env')

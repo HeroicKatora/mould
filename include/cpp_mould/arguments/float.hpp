@@ -4,6 +4,8 @@
 #include <cstdio>
 
 #include <double-conversion/double-conversion.h>
+#include <ryu/ryu.h>
+#include <dragonbox.h>
 
 #include "../format.hpp"
 
@@ -14,24 +16,23 @@ namespace mould {
     return AutoFormatting<AutoFormattingChoice::string> { };
   }
 
+  struct DoubleResultInformation { };
+
   template<typename Formatter>
-  FormattingResult format_string(double value, Formatter formatter) {
+  ResultWithInformation<DoubleResultInformation> format_string(double value, Formatter formatter) {
     using namespace double_conversion;
     char buffer[100];
 
     auto format = formatter.format();
-    auto& converter = DoubleToStringConverter::EcmaScriptConverter();
-    StringBuilder builder{buffer, 100};
+    char* result_buffer = buffer;
 
     if(format.sign == internal::Sign::Always && value >= 0)
-      builder.AddCharacter('+'); // Add the sign
+      *result_buffer++ = '+'; // Add the sign
     else if(format.sign == internal::Sign::Pad && value >= 0)
-      builder.AddCharacter(' '); // Add the sign
+      *result_buffer++ = ' '; // Add the sign
 
-    if(!converter.ToShortest(value, &builder))
-      return FormattingResult::Error;
-
-    unsigned length = builder.position();
+    result_buffer = dragonbox::Dtoa(result_buffer, value);
+    const size_t length = result_buffer - buffer;
 
     const auto important_buffer = std::string_view{buffer, length};
     formatter.append(important_buffer);
@@ -39,27 +40,25 @@ namespace mould {
   }
 
   template<typename Formatter>
-  FormattingResult format_fpoint(double value, Formatter formatter) {
+  ResultWithInformation<DoubleResultInformation> format_fpoint(double value, Formatter formatter) {
     using namespace double_conversion;
     char buffer[100];
 
     auto format = formatter.format();
-    auto& converter = DoubleToStringConverter::EcmaScriptConverter();
-    StringBuilder builder{buffer, 100};
+    char* result_buffer = buffer;
 
     if(format.sign == internal::Sign::Always && value >= 0)
-      builder.AddCharacter('+'); // Add the sign
+      *result_buffer++ = '+'; // Add the sign
     else if(format.sign == internal::Sign::Pad && value >= 0)
-      builder.AddCharacter(' '); // Add the sign
+      *result_buffer++ = ' '; // Add the sign
 
-    int fixed_count = format.has_precision ? format.precision : 6;
-    if(!converter.ToFixed(value, fixed_count, &builder))
-      return FormattingResult::Error;
+    unsigned fixed_count = format.has_precision ? format.precision : 6;
 
-    unsigned length = builder.position();
-
-    const auto important_buffer = std::string_view{buffer, length};
+    int written = d2fixed_buffered_n(value, fixed_count, result_buffer);
+    const size_t total_len = static_cast<size_t>((result_buffer + written) - buffer);
+    const auto important_buffer = std::string_view{buffer, total_len};
     formatter.append(important_buffer);
+
     return FormattingResult::Success;
   }
 }

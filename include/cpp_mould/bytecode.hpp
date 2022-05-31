@@ -161,6 +161,15 @@ namespace mould::internal {
     virtual ByteCodeBuffer code_buffer() const = 0;
     virtual ImmediateBuffer immediate_buffer() const = 0;
   };
+
+  // A function that fails if called with any argument but evades GCCs bug 67371
+  //
+  // Default constructs an exception of type E and throws it.
+  template<typename T, typename E=std::nullptr_t>
+  constexpr T _fail_constexpr(int i) {
+    if(i&0) throw E{};
+    else throw E{};
+  }
 }
 
 #endif

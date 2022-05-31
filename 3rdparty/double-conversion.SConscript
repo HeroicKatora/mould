@@ -17,7 +17,10 @@ static_lib = env.StaticLibrary(library_name, double_conversion_static_objects)
 static_lib_pic = env.StaticLibrary(library_name + '_pic', double_conversion_shared_objects)
 shared_lib = env.SharedLibrary(library_name, double_conversion_shared_objects)
 
-DoubleConversionLibs = namedtuple('DoubleConversionLibs', 'static, pic, shared')
-
-double_conversion_libs = DoubleConversionLibs(static_lib, static_lib_pic, shared_lib)
+DoubleConversion = namedtuple('DoubleConversion', 'static, pic, shared, include')
+double_conversion_libs = DoubleConversion(
+        static=static_lib,
+        pic=static_lib_pic,
+        shared=shared_lib,
+        include=Dir('double-conversion'))
 Return('double_conversion_libs')
