@@ -180,8 +180,8 @@ namespace mould::internal::constexpr_driver {
       context, args...), 0) ...};
   }
 
-  template<typename Format, typename ... Arguments>
-  inline auto eval(Engine engine, Arguments ... args) {
+  template<typename Format, typename EngineImpl, typename ... Arguments>
+  inline auto eval(EngineImpl engine, Arguments ... args) {
     ExpressionContext context {
       engine,
       Format::data.format_buffer()
@@ -202,8 +202,22 @@ namespace mould {
   {
     using namespace internal::constexpr_driver;
 
-    internal::Engine engine{output};
+    internal::StringEngine engine{output};
 
+    eval<Format>(engine, arguments...);
+  }
+
+  template<typename Format, typename OStream, typename ... Arguments>
+  void write_constexpr(
+    Format& format_string,
+    OStream& output,
+    Arguments&&... arguments)
+  {
+    using namespace internal::constexpr_driver;
+    using RdBuf = typename std::remove_pointer<decltype(std::declval<OStream>().rdbuf())>::type;
+
+    std::array<char, 512> buf;
+    internal::BufferStreamEngine<RdBuf> engine{buf.data(), buf.size(), output.rdbuf()};
     eval<Format>(engine, arguments...);
   }
 }

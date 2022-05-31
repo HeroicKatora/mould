@@ -5,7 +5,7 @@
 
 namespace mould::internal {
   /* Specialization point for addition information. Every type that should be formatted 
-   * MUST provide an implemenation of this.
+   * MUST provide an implementation of this.
    */
   template<typename T>
   struct TypedFormatterInformation {
@@ -53,7 +53,7 @@ namespace mould::internal {
     return SingleValueFormatter<decltype(fn)> { fn };
   }
 
-  // Dispatch for functions which explicitely signal not being implemented
+  // Dispatch for functions which explicitly signal not being implemented
   template<auto F, typename T>
   constexpr auto build_formatter(NotImplemented (*fn)(const T&, Formatter)) {
     return SingleValueFormatter<std::nullptr_t> { nullptr };

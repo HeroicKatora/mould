@@ -42,10 +42,6 @@ namespace mould {
     void append(const char*) const;
     void append(std::string_view) const;
 
-    // Get a mutable buffer into which the encoded value can be written. This
-    // may fail, in which case a 0-length buffer is returned.
-    char* reserve(size_t length) const;
-
     inline const Format& format() const {
       return _format;
     }
