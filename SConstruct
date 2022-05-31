@@ -2,7 +2,7 @@
 import os.path
 
 env = Environment(tools=['default', 'clang'])
-env.MergeFlags(['-std=c++17', '-O3', '-DNDEBUG'])
+env.MergeFlags(['-std=c++17', '-O3', '-DNDEBUG', '-flto'])
 
 def is_clang():
     return bool(int(ARGUMENTS.get('clang', 0)))
@@ -12,6 +12,13 @@ def is_profile():
 
 if is_clang():
     env.Replace(CXX='clang++')
+    env.Replace(CC='clang')
+else:
+    env.Replace(CXX='g++')
+    env.Replace(CC='gcc')
+
+env.Append(LINKFLAGS='-flto')
+
 if is_profile(): 
     env.Append(LINKFLAGS='-lprofiler')
 

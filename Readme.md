@@ -6,8 +6,8 @@ Implements the well-known `formatlib` benchmark in [speed.cpp](./test/run.cpp).
 
 | test name | run time | executable size (stripped) |
 |-----------|---------:|---------------------------:|
-| gcc       | 0.290    | 143kB |
-| clang     | 0.327s   | 139kB |
+| gcc       | 0.290s   | 143kB |
+| clang     | 0.167s   | 43kB |
 
 ------------
 

@@ -10,11 +10,11 @@ ryu_sources = ['ryu/ryu/' + x for x in (
 library_name = 'ryu'
 
 ryu_static_objects = [
-        env.StaticObject(src, CPPPATH=['ryu'], CXX='clang++') for src in ryu_sources]
+        env.StaticObject(src, CPPPATH=['ryu']) for src in ryu_sources]
 
 Ryu = namedtuple('Ryu', 'static, include')
 ryu_library = Ryu(
-        static=env.StaticLibrary(library_name, ryu_static_objects, CXX='clang++'),
+        static=env.StaticLibrary(library_name, ryu_static_objects),
         include=Dir('ryu'))
 
 Return('ryu_library')
