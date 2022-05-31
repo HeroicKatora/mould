@@ -27,6 +27,18 @@ namespace mould {
     return FormattingResult::Success;
   }
 
+  /* Standard implementation for std::string_view */
+  template<typename Choice>
+  constexpr AutoFormatting<AutoFormattingChoice::string> format_auto(const std::string_view, Choice choice) {
+    return AutoFormatting<AutoFormattingChoice::string> { };
+  }
+
+  template<typename Formatter>
+  FormattingResult format_string(const std::string_view value, Formatter formatter) {
+    formatter.append(value);
+    return FormattingResult::Success;
+  }
+
   /* Standard implementation for char */
   template<typename Choice>
   constexpr AutoFormatting<AutoFormattingChoice::character> format_auto(char, Choice choice) {

@@ -98,19 +98,20 @@ namespace mould::internal::constexpr_driver {
     std::make_index_sequence<std::size(Format::data.code)>{});
 
   /* Run the engine with arguments */
+  template<typename EngineImpl>
   struct ExpressionContext {
-    Engine& engine;
+    EngineImpl& engine;
     Buffer<const char> format_buffer;
   };
 
-  template<typename ExpT>
+  template<typename EngineImpl, typename ExpT>
   struct Eval;
 
-  template<>
-  struct Eval<LiteralExpression> {
+  template<typename EngineImpl>
+  struct Eval<EngineImpl, LiteralExpression> {
     template<typename Format, size_t index, typename ... Arguments>
     static inline auto evaluate(
-      const ExpressionContext& context,
+      const ExpressionContext<EngineImpl>& context,
       Arguments& ... args) 
     {
       constexpr auto& expression = std::get<index>(CompiledExpressions<Format, Arguments...>.expressions);
@@ -131,11 +132,11 @@ namespace mould::internal::constexpr_driver {
     }
   }
 
-  template<typename T>
-  struct Eval<TypedArgumentExpression<T>> {
+  template<typename EngineImpl, typename T>
+  struct Eval<EngineImpl, TypedArgumentExpression<T>> {
     template<typename Format, size_t index, typename ... Arguments>
     static inline auto evaluate(
-      const ExpressionContext& context,
+      const ExpressionContext<EngineImpl>& context,
       Arguments& ... args)
     {
       constexpr auto& expression = std::get<index>(CompiledExpressions<Format, Arguments...>.expressions);
@@ -173,20 +174,21 @@ namespace mould::internal::constexpr_driver {
     Ignore(I&& ...) {}
   };
 
-  template<typename Format, typename ... Arguments, size_t ... Indices>
-  inline auto _eval(ExpressionContext context, std::index_sequence<Indices...>, Arguments& ... args) {
+  template<typename EngineImpl, typename Format, typename ... Arguments, size_t ... Indices>
+  inline auto _eval(ExpressionContext<EngineImpl> context, std::index_sequence<Indices...>, Arguments& ... args) {
     using Compiled = decltype(CompiledExpressions<Format, Arguments...>);
-    Ignore ignore{(Eval<typename Compiled::template ExpressionType<Indices>>::template evaluate<Format, Indices>(
-      context, args...), 0) ...};
+    Ignore ignore{(Eval<EngineImpl, typename Compiled::template ExpressionType<Indices>>
+        ::template evaluate<Format, Indices>(context, args...), 0
+      ) ...};
   }
 
   template<typename Format, typename EngineImpl, typename ... Arguments>
   inline auto eval(EngineImpl engine, Arguments ... args) {
-    ExpressionContext context {
+    ExpressionContext<EngineImpl> context {
       engine,
       Format::data.format_buffer()
     };
-    return _eval<Format>(
+    return _eval<EngineImpl, Format>(
       context,
       std::make_index_sequence<std::size(Format::data.code)>{},
       args... );
